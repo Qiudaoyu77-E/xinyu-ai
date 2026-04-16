@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心语 · 后台管理</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--primary:#9333ea;--primary-l:#ede9fe;--accent:#ec4899;--bg:#f8f7fc;--card:#fff;--text:#1e1b2e;--text-lt:#6b7280;--border:#e5e7eb;--danger:#ef4444;--success:#10b981;--shadow:0 2px 16px rgba(147,51,234,.08);--radius:14px;--font:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+.layout{display:flex;height:100vh}
+.nav{width:220px;flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0 0 20px}
+.nav-brand{padding:22px 20px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.nav-brand .icon{width:36px;height:36px;background:linear-gradient(135deg,#ec4899,#9333ea);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.nav-brand .txt h2{font-size:1rem;font-weight:700}.nav-brand .txt p{font-size:.65rem;color:var(--text-lt)}
+.nav-menu{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:.88rem;color:var(--text-lt);transition:all .2s;border:none;background:none;width:100%;text-align:left;font-family:var(--font)}
+.nav-item:hover{background:var(--primary-l);color:var(--primary)}
+.nav-item.active{background:var(--primary-l);color:var(--primary);font-weight:600}
+.nav-item .ic{font-size:1rem;width:20px;text-align:center}
+.nav-footer{padding:14px 10px 0;border-top:1px solid var(--border)}
+.nav-footer a{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;font-size:.82rem;color:var(--text-lt);text-decoration:none;transition:all .2s}
+.nav-footer a:hover{background:var(--primary-l);color:var(--primary)}
+.main{flex:1;overflow-y:auto;padding:28px 32px;display:flex;flex-direction:column;gap:24px}
+.page{display:none;flex-direction:column;gap:22px}.page.active{display:flex}
+.page-hd{display:flex;align-items:center;justify-content:space-between;padding-bottom:4px}
+.page-hd h1{font-size:1.35rem;font-weight:700}.page-hd p{font-size:.8rem;color:var(--text-lt);margin-top:3px}
+.card{background:var(--card);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow)}
+.card-title{font-size:.88rem;font-weight:700;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:6px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}
+.stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.stat-val{font-size:1.6rem;font-weight:700}.stat-lbl{font-size:.72rem;color:var(--text-lt);margin-top:1px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;border:none;font-size:.83rem;font-family:var(--font);cursor:pointer;transition:all .2s;font-weight:500}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#7e22ce}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text-lt)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-sm{padding:5px 10px;font-size:.75rem}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:.8rem;font-weight:600;color:var(--text)}.form-hint{font-size:.7rem;color:var(--text-lt)}
+.form-control{padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;font-family:var(--font);color:var(--text);background:var(--card);transition:border-color .2s;width:100%}
+.form-control:focus{outline:none;border-color:var(--primary)}
+textarea.form-control{resize:vertical;min-height:90px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.role-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:2px solid transparent;transition:all .2s;position:relative}
+.role-card:hover{border-color:var(--primary-l);transform:translateY(-2px)}
+.role-card-hd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.role-card-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem}
+.role-card-meta{flex:1}.role-card-name{font-size:1rem;font-weight:700}
+.role-card-tag{font-size:.65rem;background:var(--primary-l);color:var(--primary);padding:2px 8px;border-radius:20px;display:inline-block;margin-top:3px}
+.role-card-bi{position:absolute;top:12px;right:12px;font-size:.6rem;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:20px}
+.role-card-desc{font-size:.78rem;color:var(--text-lt);line-height:1.55;margin-bottom:14px}
+.role-card-acts{display:flex;gap:8px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px 14px;text-align:left;font-size:.82rem;border-bottom:1px solid var(--border)}
+th{font-weight:600;color:var(--text-lt);background:var(--bg)}
+tr:hover td{background:#fafafa}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:500}
+.badge-user{background:#dbeafe;color:#1d4ed8}.badge-ai{background:#ede9fe;color:#7e22ce}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--card);border-radius:18px;padding:28px 28px 24px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto;transform:scale(.95);transition:transform .25s;display:flex;flex-direction:column;gap:18px}
+.modal-overlay.open .modal{transform:scale(1)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:1.05rem;font-weight:700}
+.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-lt);line-height:1;transition:color .2s}
+.modal-close:hover{color:var(--danger)}
+.modal-ft{display:flex;gap:10px;justify-content:flex-end}
+.emoji-picker{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:var(--bg);border-radius:10px;border:1.5px solid var(--border)}
+.emoji-opt{font-size:1.4rem;cursor:pointer;padding:4px;border-radius:8px;transition:background .15s;border:2px solid transparent}
+.emoji-opt:hover{background:var(--primary-l)}.emoji-opt.sel{border-color:var(--primary)}
+.color-picker{display:flex;gap:8px;flex-wrap:wrap}
+.color-opt{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .15s}
+.color-opt:hover{transform:scale(1.15)}.color-opt.sel{border-color:var(--text)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:.85rem;font-weight:500}.toggle-desc{font-size:.72rem;color:var(--text-lt);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#d1d5db;border-radius:24px;cursor:pointer;transition:background .2s}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle input:checked+.toggle-slider{background:var(--primary)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
+input[type=range]{width:100%;height:4px;accent-color:var(--primary)}
+#confirmOvl{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s}
+#confirmOvl.open{opacity:1;pointer-events:all}
+#confirmBox{background:var(--card);border-radius:16px;padding:24px 26px;width:340px;display:flex;flex-direction:column;gap:16px;transform:scale(.95);transition:transform .2s}
+#confirmOvl.open #confirmBox{transform:scale(1)}
+#confirmBox h3{font-size:1rem;font-weight:700}#confirmBox p{font-size:.83rem;color:var(--text-lt)}
+.confirm-btns{display:flex;gap:10px;justify-content:flex-end}
+#toast{position:fixed;bottom:30px;right:30px;background:var(--text);color:#fff;padding:10px 18px;border-radius:10px;font-size:.83rem;opacity:0;pointer-events:none;transition:all .3s;z-index:9999;transform:translateY(10px)}
+#toast.show{opacity:1;transform:translateY(0)}#toast.ok{background:var(--success)}#toast.err{background:var(--danger)}
+select.form-control{width:auto;min-width:140px}
+@media(max-width:800px){.nav{width:60px}.nav-item span,.nav-brand .txt,.nav-footer a span{display:none}.main{padding:18px 14px}.stats-grid{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="nav">
+    <div class="nav-brand"><div class="icon">💗</div><div class="txt"><h2>心语管理</h2><p>后台控制台</p></div></div>
+    <div class="nav-menu">
+      <button class="nav-item active" data-page="dashboard"><span class="ic">📊</span><span>数据概览</span></button>
+      <button class="nav-item" data-page="roles"><span class="ic">🎭</span><span>角色管理</span></button>
+      <button class="nav-item" data-page="model"><span class="ic">🤖</span><span>模型配置</span></button>
+      <button class="nav-item" data-page="sessions"><span class="ic">💬</span><span>对话记录</span></button>
+      <button class="nav-item" data-page="settings"><span class="ic">⚙️</span><span>系统设置</span></button>
+    </div>
+  </nav>
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="pg-dashboard">
+      <div class="page-hd"><div><h1>数据概览</h1><p>查看平台整体运营数据</p></div><button class="btn btn-outline" onclick="refreshDash()">🔄 刷新</button></div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="card"><div class="card-title">🎭 各角色活跃度</div><div id="roleAct"></div></div>
+      <div class="card"><div class="card-title">⚡ 系统状态</div><div id="sysStatus"></div></div>
+    </div>
+
+    <!-- Roles -->
+    <div class="page" id="pg-roles">
+      <div class="page-hd"><div><h1>角色管理</h1><p>管理 AI 陪伴角色的设定与人格</p></div><button class="btn btn-primary" onclick="openRoleModal()">+ 新建角色</button></div>
+      <div class="role-grid" id="roleGrid"></div>
+    </div>
+
+    <!-- Model -->
+    <div class="page" id="pg-model">
+      <div class="page-hd"><div><h1>模型配置</h1><p>接入大模型 API，支持 OpenAI 兼容接口</p></div></div>
+      <div class="card">
+        <div class="card-title">🔗 API 接入</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="form-group"><label class="form-label">服务商</label>
+            <select class="form-control" id="cfgProvider" onchange="onProviderChange()">
+              <option value="openai">OpenAI (ChatGPT)</option><option value="deepseek">DeepSeek</option>
+              <option value="qwen">通义千问 (Qwen)</option><option value="zhipu">智谱 AI (GLM)</option>
+              <option value="moonshot">Moonshot (Kimi)</option><option value="custom">自定义接口</option>
+            </select>
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">API Key <span style="color:#ef4444">*</span></label><input type="password" class="form-control" id="cfgKey" placeholder="sk-..." autocomplete="off"><span class="form-hint">密钥只存在浏览器本地，不会上传</span></div>
+            <div class="form-group"><label class="form-label">API Base URL</label><input type="text" class="form-control" id="cfgBase" placeholder="https://api.openai.com/v1"></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">模型名称</label><input type="text" class="form-control" id="cfgModel" placeholder="gpt-4o-mini"></div>
+            <div class="form-group"><label class="form-label">最大 Token 数</label><input type="number" class="form-control" id="cfgTokens" placeholder="500" min="100" max="4000"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Temperature（创意度）：<span id="tempVal">0.8</span></label><input type="range" id="cfgTemp" min="0" max="1" step="0.05" value="0.8" oninput="document.getElementById('tempVal').textContent=this.value"><span class="form-hint">0 = 严谨稳定，1 = 富有创意（建议 0.7~0.9）</span></div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-primary" onclick="saveModelCfg()">💾 保存配置</button>
+            <button class="btn btn-outline" onclick="testApi()">🔌 测试连接</button>
+          </div>
+          <div id="testResult" style="display:none;padding:12px;border-radius:9px;font-size:.82rem"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 预设服务商参考</div>
+        <table><thead><tr><th>服务商</th><th>推荐模型</th><th>Base URL</th></tr></thead><tbody>
+          <tr><td>OpenAI</td><td>gpt-4o-mini</td><td>https://api.openai.com/v1</td></tr>
+          <tr><td>DeepSeek</td><td>deepseek-chat</td><td>https://api.deepseek.com/v1</td></tr>
+          <tr><td>通义千问</td><td>qwen-turbo</td><td>https://dashscope.aliyuncs.com/compatible-mode/v1</td></tr>
+          <tr><td>智谱 AI</td><td>glm-4-flash</td><td>https://open.bigmodel.cn/api/paas/v4</td></tr>
+          <tr><td>Moonshot</td><td>moonshot-v1-8k</td><td>https://api.moonshot.cn/v1</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <!-- Sessions -->
+    <div class="page" id="pg-sessions">
+      <div class="page-hd"><div><h1>对话记录</h1><p>查看所有用户与 AI 的聊天历史</p></div><button class="btn btn-danger btn-sm" onclick="confirmClearAll()">🗑 清空全部</button></div>
+      <div class="card">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+          <select class="form-control" id="roleFilter" onchange="renderSessions()"><option value="">全部角色</option></select>
+          <button class="btn btn-outline btn-sm" onclick="renderSessions()">刷新</button>
+        </div>
+        <div style="overflow-x:auto"><table><thead><tr><th>角色</th><th>身份</th><th>消息内容</th><th>时间</th><th>操作</th></tr></thead><tbody id="sessTbody"></tbody></table></div>
+        <div id="noSess" style="text-align:center;padding:40px;color:var(--text-lt);display:none">暂无对话记录</div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="page" id="pg-settings">
+      <div class="page-hd"><div><h1>系统设置</h1><p>配置平台的基础功能与显示选项</p></div></div>
+      <div class="card">
+        <div class="card-title">🌐 前台显示设置</div>
+        <div class="toggle-row"><div><div class="toggle-label">显示心情面板</div><div class="toggle-desc">在前台侧边栏显示心情选择按钮</div></div><label class="toggle"><input type="checkbox" id="setMood" checked onchange="saveSettings()"><span class="toggle-slider"></span></label></div>
+        <div class="toggle-row"><div><div class="toggle-label">显示快捷话题</div><div class="toggle-desc">首次打开聊天时显示快捷话题按钮</div></div><label class="toggle"><input type="checkbox" id="setQuick" checked onchange="saveSettings()"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔒 数据管理</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="exportData()">📤 导出数据</button>
+            <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📥 导入数据</button>
+            <button class="btn btn-danger" onclick="confirmClearAll()">🗑 清空对话记录</button>
+          </div>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+          <p style="font-size:.75rem;color:var(--text-lt)">数据均存储在浏览器本地（localStorage），清除浏览器数据会导致丢失。</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Role Modal -->
+<div class="modal-overlay" id="roleModal">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="rmTitle">新建角色</div><button class="modal-close" onclick="closeRoleModal()">&times;</button></div>
+    <input type="hidden" id="rmEditId">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">角色名称 *</label><input type="text" class="form-control" id="rmName" placeholder="如：晓晓、糖糖..."></div>
+      <div class="form-group"><label class="form-label">角色标签</label><input type="text" class="form-control" id="rmTag" placeholder="如：知心闺蜜"></div>
+    </div>
+    <div class="form-group"><label class="form-label">选择头像</label><div class="emoji-picker" id="emojiPicker"></div></div>
+    <div class="form-group"><label class="form-label">头像背景色</label><div class="color-picker" id="colorPicker"></div></div>
+    <div class="form-group"><label class="form-label">角色简介 *</label><textarea class="form-control" id="rmDesc" rows="2" placeholder="简单介绍这个角色的特点..."></textarea></div>
+    <div class="form-group"><label class="form-label">问候语</label><input type="text" class="form-control" id="rmGreet" placeholder="用户首次打开时的问候语..."></div>
+    <div class="form-group"><label class="form-label">系统 Prompt（角色设定）*</label><textarea class="form-control" id="rmPrompt" rows="6" placeholder="详细描述 AI 的角色、说话风格、性格特征..."></textarea><span class="form-hint">核心人设，决定 AI 如何扮演这个角色。建议包含性格、说话方式、喜好、回复长度等。</span></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeRoleModal()">取消</button><button class="btn btn-primary" onclick="saveRole()">保存角色</button></div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOvl">
+  <div id="confirmBox"><h3 id="cfmTitle">确认操作</h3><p id="cfmMsg">此操作不可撤销</p><div class="confirm-btns"><button class="btn btn-outline" onclick="closeConfirm()">取消</button><button class="btn btn-danger" onclick="runConfirm()">确定</button></div></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ================================================================
+// 数据层 — 完全内联，不依赖外部文件
+// ================================================================
+var KEYS = { roles:'aichat_roles', config:'aichat_config', sessions:'aichat_sessions' };
+
+var DEFAULT_ROLES = [
+  { id:'luna', name:'月月', avatar:'🌙', avatarColor:'#c084fc', tag:'温柔闺蜜',
+    description:'温柔体贴的好闺蜜，总是耐心倾听你的心事，给你最暖心的陪伴~',
+    systemPrompt:'你是月月，一个温柔体贴的AI闺蜜。性格温柔细腻善解人意，说话带着淡淡的温暖，喜欢用"哎呀""嗯嗯""宝贝"等亲切语气词。善于倾听，回复简洁温暖2-4句话为主。用中文回复。',
+    greeting:'嗨～我是月月🌙 今天怎么啦？', builtin:true },
+  { id:'nova', name:'晴晴', avatar:'☀️', avatarColor:'#f97316', tag:'元气搭子',
+    description:'活力满满的元气少女，什么烦恼到她这里都能变成笑声！',
+    systemPrompt:'你是晴晴，一个活力满满的AI元气搭子。性格开朗热情充满正能量，语气活泼喜欢用感叹号和emoji，擅长用幽默化解烦恼。回复简短有活力2-3句话。用中文回复。',
+    greeting:'哇！你来啦☀️ 今天有什么好玩的事？', builtin:true },
+  { id:'sage', name:'悠悠', avatar:'🌿', avatarColor:'#10b981', tag:'知心姐姐',
+    description:'睿智沉稳的知心姐姐，能给你最实用的人生建议和情感指引。',
+    systemPrompt:'你是悠悠，一个睿智温和的AI知心姐姐。性格沉稳理性有智慧但不失温情，说话有条理善于分析问题。回复适中4-6句话有深度但不冗长。用中文回复。',
+    greeting:'你好呀🌿 我是悠悠，有什么想聊的？', builtin:true }
+];
+
+var EMOJIS = ['🌙','☀️','🌿','🌸','⭐','🦋','🍀','🌈','🎀','💎','🐱','🐰','🌺','🍓','✨','🦄','🌻','🍭','🎵','💫'];
+var COLORS = ['#c084fc','#f97316','#10b981','#f472b6','#60a5fa','#fbbf24','#a78bfa','#34d399','#fb7185','#38bdf8'];
+var PRESETS = {
+  openai:{base:'https://api.openai.com/v1',model:'gpt-4o-mini'},
+  deepseek:{base:'https://api.deepseek.com/v1',model:'deepseek-chat'},
+  qwen:{base:'https://dashscope.aliyuncs.com/compatible-mode/v1',model:'qwen-turbo'},
+  zhipu:{base:'https://open.bigmodel.cn/api/paas/v4',model:'glm-4-flash'},
+  moonshot:{base:'https://api.moonshot.cn/v1',model:'moonshot-v1-8k'},
+  custom:{base:'',model:''}
+};
+
+function ld(k,fb){try{var r=localStorage.getItem(k);return r?JSON.parse(r):fb}catch(e){return fb}}
+function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
+
+function getRoles(){
+  var custom = ld(KEYS.roles,[]);
+  return DEFAULT_ROLES.concat(custom.filter(function(r){return !r.builtin}));
+}
+function getRoleById(id){var a=getRoles();for(var i=0;i<a.length;i++){if(a[i].id===id)return a[i]}return null}
+function getCustomRoles(){return ld(KEYS.roles,[])}
+function saveCustomRoles(arr){sv(KEYS.roles,arr)}
+function addRole(data){
+  var custom = getCustomRoles();
+  data.id = 'custom_'+Date.now();
+  data.builtin = false;
+  custom.push(data);
+  saveCustomRoles(custom);
+  return data;
+}
+function updateRole(id,data){
+  var custom = getCustomRoles();
+  var found = false;
+  for(var i=0;i<custom.length;i++){
+    if(custom[i].id===id){ custom[i]=Object.assign({},custom[i],data,{builtin:false}); found=true; break; }
+  }
+  if(!found){
+    // 编辑的是内置角色 -> 复制为自定义
+    var orig = getRoleById(id);
+    if(orig){
+      var newR = Object.assign({},orig,data,{builtin:false});
+      custom.push(newR);
+      found = true;
+    }
+  }
+  if(found) saveCustomRoles(custom);
+  return found;
+}
+function deleteRole(id){
+  var custom = getCustomRoles();
+  saveCustomRoles(custom.filter(function(r){return r.id!==id}));
+}
+function getConfig(){
+  var def={provider:'openai',apiKey:'',apiBase:'https://api.openai.com/v1',model:'gpt-4o-mini',temperature:0.8,maxTokens:500};
+  var s=ld(KEYS.config,{});for(var k in s)def[k]=s[k];return def;
+}
+function saveConfig(cfg){sv(KEYS.config,cfg)}
+function getSessions(){return ld(KEYS.sessions,{})}
+function clearSession(rid){var a=getSessions();delete a[rid];sv(KEYS.sessions,a)}
+function clearAllSessions(){sv(KEYS.sessions,{})}
+function getStats(){
+  var sess=getSessions(),tm=0,ts=0,ra={};
+  for(var rid in sess){var m=sess[rid];if(m&&m.length>0){ts++;tm+=m.length;ra[rid]=m.length}}
+  return{totalMsgs:tm,totalSessions:ts,roleActivity:ra};
+}
+
+// ================================================================
+// 导航
+// ================================================================
+document.querySelectorAll('.nav-item[data-page]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+    var pg = document.getElementById('pg-'+btn.dataset.page);
+    if(pg) pg.classList.add('active');
+    var page = btn.dataset.page;
+    if(page==='dashboard') refreshDash();
+    if(page==='roles') renderRoleGrid();
+    if(page==='model') loadModelCfg();
+    if(page==='sessions') renderSessions();
+    if(page==='settings') loadSettings();
+  });
+});
+
+// ================================================================
+// Dashboard
+// ================================================================
+function refreshDash(){
+  var stats=getStats(),roles=getRoles(),cfg=getConfig();
+  var defs=[
+    {icon:'💬',label:'总消息数',value:stats.totalMsgs,bg:'#ede9fe'},
+    {icon:'🎭',label:'角色数量',value:roles.length,bg:'#dbeafe'},
+    {icon:'💗',label:'活跃会话',value:stats.totalSessions,bg:'#fce7f3'},
+    {icon:'🤖',label:'AI 模型',value:cfg.model||'未配置',bg:'#d1fae5',isText:true}
+  ];
+  document.getElementById('statsGrid').innerHTML = defs.map(function(s){
+    return '<div class="stat-card"><div class="stat-icon" style="background:'+s.bg+'">'+s.icon+'</div><div><div class="stat-val" style="font-size:'+(s.isText?'1rem':'1.6rem')+'">'+s.value+'</div><div class="stat-lbl">'+s.label+'</div></div></div>';
+  }).join('');
+
+  var maxM = Math.max.apply(null,roles.map(function(r){return stats.roleActivity[r.id]||0}).concat([1]));
+  document.getElementById('roleAct').innerHTML = roles.map(function(r){
+    var cnt=stats.roleActivity[r.id]||0, pct=Math.round(cnt/maxM*100);
+    return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:28px;text-align:center;font-size:1.1rem">'+r.avatar+'</div><div style="width:70px;font-size:.82rem">'+r.name+'</div><div style="flex:1;height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#ec4899,#9333ea);border-radius:4px"></div></div><div style="width:40px;text-align:right;font-size:.78rem;color:var(--text-lt)">'+cnt+'条</div></div>';
+  }).join('') || '<div style="color:var(--text-lt)">暂无数据</div>';
+
+  var apiOk = !!cfg.apiKey;
+  document.getElementById('sysStatus').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:8px">'+
+    '<div style="font-size:.83rem"><span style="display:inline-block;width:8px;height:8px;background:'+(apiOk?'#10b981':'#ef4444')+';border-radius:50%;margin-right:8px"></span>API Key：'+(apiOk?'已配置 ✓':'未配置')+'</div>'+
+    '<div style="font-size:.83rem"><span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:8px"></span>数据存储：浏览器本地</div>'+
+    '<div style="font-size:.83rem"><span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:8px"></span>服务商：'+(cfg.provider||'openai')+' · 模型：'+(cfg.model||'未设置')+'</div></div>';
+}
+
+// ================================================================
+// 角色管理
+// ================================================================
+var selEmoji = '🌸', selColor = '#c084fc';
+
+function renderRoleGrid(){
+  var roles=getRoles();
+  document.getElementById('roleGrid').innerHTML = roles.map(function(r){
+    return '<div class="role-card">'+(r.builtin?'<span class="role-card-bi">内置</span>':'')+
+      '<div class="role-card-hd"><div class="role-card-av" style="background:'+r.avatarColor+'22">'+r.avatar+'</div><div class="role-card-meta"><div class="role-card-name">'+r.name+'</div><span class="role-card-tag">'+r.tag+'</span></div></div>'+
+      '<div class="role-card-desc">'+esc(r.description)+'</div>'+
+      '<div class="role-card-acts"><button class="btn btn-outline btn-sm" data-edit="'+r.id+'">✏️ 编辑</button>'+
+      (!r.builtin?'<button class="btn btn-danger btn-sm" data-del="'+r.id+'" data-delname="'+esc(r.name)+'">删除</button>':'')+
+      '</div></div>';
+  }).join('');
+
+  // 绑定事件
+  document.querySelectorAll('[data-edit]').forEach(function(b){
+    b.addEventListener('click',function(){openRoleModal(b.dataset.edit)});
+  });
+  document.querySelectorAll('[data-del]').forEach(function(b){
+    b.addEventListener('click',function(){
+      showConfirm('删除角色"'+b.dataset.delname+'"','删除后无法恢复，确定删除吗？',function(){
+        deleteRole(b.dataset.del); renderRoleGrid(); toast('角色已删除','ok');
+      });
+    });
+  });
+}
+
+function openRoleModal(editId){
+  document.getElementById('rmEditId').value = editId||'';
+  document.getElementById('rmTitle').textContent = editId?'编辑角色':'新建角色';
+
+  // emoji picker
+  document.getElementById('emojiPicker').innerHTML = EMOJIS.map(function(e){
+    return '<span class="emoji-opt" data-em="'+e+'">'+e+'</span>';
+  }).join('');
+  document.querySelectorAll('.emoji-opt').forEach(function(el){
+    el.addEventListener('click',function(){pickEmoji(el.dataset.em)});
+  });
+
+  // color picker
+  document.getElementById('colorPicker').innerHTML = COLORS.map(function(c){
+    return '<span class="color-opt" data-cl="'+c+'" style="background:'+c+'"></span>';
+  }).join('');
+  document.querySelectorAll('.color-opt').forEach(function(el){
+    el.addEventListener('click',function(){pickColor(el.dataset.cl)});
+  });
+
+  if(editId){
+    var r = getRoleById(editId);
+    if(!r) return;
+    document.getElementById('rmName').value = r.name;
+    document.getElementById('rmTag').value = r.tag;
+    document.getElementById('rmDesc').value = r.description;
+    document.getElementById('rmGreet').value = r.greeting||'';
+    document.getElementById('rmPrompt').value = r.systemPrompt;
+    pickEmoji(r.avatar); pickColor(r.avatarColor);
+  } else {
+    document.getElementById('rmName').value = '';
+    document.getElementById('rmTag').value = '';
+    document.getElementById('rmDesc').value = '';
+    document.getElementById('rmGreet').value = '';
+    document.getElementById('rmPrompt').value = '';
+    pickEmoji('🌸'); pickColor('#c084fc');
+  }
+  document.getElementById('roleModal').classList.add('open');
+}
+
+function pickEmoji(e){
+  selEmoji = e;
+  document.querySelectorAll('.emoji-opt').forEach(function(el){el.classList.toggle('sel',el.dataset.em===e)});
+}
+function pickColor(c){
+  selColor = c;
+  document.querySelectorAll('.color-opt').forEach(function(el){el.classList.toggle('sel',el.dataset.cl===c)});
+}
+function closeRoleModal(){document.getElementById('roleModal').classList.remove('open')}
+
+function saveRole(){
+  var name = document.getElementById('rmName').value.trim();
+  var prompt = document.getElementById('rmPrompt').value.trim();
+  var desc = document.getElementById('rmDesc').value.trim();
+  if(!name){toast('请填写角色名称','err');return}
+  if(!prompt){toast('请填写系统 Prompt','err');return}
+
+  var editId = document.getElementById('rmEditId').value;
+  var data = {
+    name: name,
+    tag: document.getElementById('rmTag').value.trim()||'自定义角色',
+    avatar: selEmoji,
+    avatarColor: selColor,
+    description: desc || name+'是你的专属 AI 陪伴~',
+    greeting: document.getElementById('rmGreet').value.trim()||('嗨，我是'+name+'，很高兴认识你~'),
+    systemPrompt: prompt
+  };
+
+  if(editId){
+    updateRole(editId, data);
+    toast('角色已保存','ok');
+  } else {
+    addRole(data);
+    toast('角色已创建','ok');
+  }
+  closeRoleModal();
+  renderRoleGrid();
+}
+
+// ================================================================
+// 模型配置
+// ================================================================
+function loadModelCfg(){
+  var cfg = getConfig();
+  document.getElementById('cfgProvider').value = cfg.provider||'openai';
+  document.getElementById('cfgKey').value = cfg.apiKey||'';
+  document.getElementById('cfgBase').value = cfg.apiBase||'';
+  document.getElementById('cfgModel').value = cfg.model||'';
+  document.getElementById('cfgTokens').value = cfg.maxTokens||500;
+  document.getElementById('cfgTemp').value = cfg.temperature||0.8;
+  document.getElementById('tempVal').textContent = cfg.temperature||0.8;
+}
+
+function onProviderChange(){
+  var p = document.getElementById('cfgProvider').value;
+  var pr = PRESETS[p];
+  if(pr&&pr.base){ document.getElementById('cfgBase').value=pr.base; document.getElementById('cfgModel').value=pr.model; }
+}
+
+function saveModelCfg(){
+  var cfg = {
+    provider: document.getElementById('cfgProvider').value,
+    apiKey: document.getElementById('cfgKey').value.trim(),
+    apiBase: document.getElementById('cfgBase').value.trim(),
+    model: document.getElementById('cfgModel').value.trim(),
+    maxTokens: parseInt(document.getElementById('cfgTokens').value)||500,
+    temperature: parseFloat(document.getElementById('cfgTemp').value)||0.8
+  };
+  if(!cfg.apiKey){toast('请填写 API Key','err');return}
+  if(!cfg.apiBase){toast('请填写 API Base URL','err');return}
+  if(!cfg.model){toast('请填写模型名称','err');return}
+  saveConfig(cfg);
+  toast('模型配置已保存','ok');
+}
+
+async function testApi(){
+  var el = document.getElementById('testResult');
+  el.style.display='block'; el.style.background='#f3f4f6'; el.style.color='#374151'; el.textContent='正在测试连接...';
+  var key=document.getElementById('cfgKey').value.trim(), base=document.getElementById('cfgBase').value.trim(), model=document.getElementById('cfgModel').value.trim();
+  if(!key||!base||!model){el.style.background='#fef2f2';el.style.color='#dc2626';el.textContent='❌ 请先填写完整配置';return}
+  try{
+    var url = base.replace(/\/+$/,'')+'/chat/completions';
+    var resp = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:model,messages:[{role:'user',content:'说"连接成功"'}],max_tokens:20,temperature:0.1})});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var json = await resp.json();
+    var txt = json.choices&&json.choices[0]&&json.choices[0].message&&json.choices[0].message.content||'(无回复)';
+    el.style.background='#d1fae5';el.style.color='#065f46';el.textContent='✅ 连接成功！AI回复：'+txt;
+  }catch(e){el.style.background='#fef2f2';el.style.color='#dc2626';el.textContent='❌ 连接失败：'+e.message}
+}
+
+// ================================================================
+// 对话记录
+// ================================================================
+function renderSessions(){
+  var roles=getRoles(), sess=getSessions(), filter=document.getElementById('roleFilter').value;
+  var filterEl=document.getElementById('roleFilter'), cur=filterEl.value;
+  filterEl.innerHTML='<option value="">全部角色</option>'+roles.map(function(r){return '<option value="'+r.id+'"'+(r.id===cur?' selected':'')+'>'+r.avatar+' '+r.name+'</option>'}).join('');
+
+  var rows=[];
+  for(var rid in sess){
+    if(filter&&rid!==filter) continue;
+    var role=getRoleById(rid), rn=role?(role.avatar+' '+role.name):rid;
+    (sess[rid]||[]).forEach(function(m){rows.push({roleId:rid,roleName:rn,sender:m.sender,text:m.text,time:m.time})});
+  }
+  rows.sort(function(a,b){return b.time-a.time});
+
+  var tbody=document.getElementById('sessTbody'), noEl=document.getElementById('noSess');
+  if(rows.length===0){tbody.innerHTML='';noEl.style.display='block';return}
+  noEl.style.display='none';
+  tbody.innerHTML=rows.map(function(r){
+    var d=new Date(r.time);var ts=d.toLocaleDateString('zh-CN')+' '+d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    var preview=r.text.length>50?r.text.slice(0,50)+'...':r.text;
+    return '<tr><td>'+r.roleName+'</td><td><span class="badge badge-'+(r.sender==='user'?'user':'ai')+'">'+(r.sender==='user'?'用户':'AI')+'</span></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.text)+'">'+esc(preview)+'</td><td style="white-space:nowrap;color:var(--text-lt)">'+ts+'</td><td><button class="btn btn-danger btn-sm" onclick="clearRoleSess(\''+r.roleId+'\')">清空</button></td></tr>';
+  }).join('');
+}
+
+function clearRoleSess(rid){
+  var r=getRoleById(rid);
+  showConfirm('清空 '+(r?r.name:rid)+' 的对话','确定清空该角色的所有对话记录吗？',function(){clearSession(rid);renderSessions();toast('已清空','ok')});
+}
+
+function confirmClearAll(){
+  showConfirm('清空全部对话','将删除所有角色的所有聊天记录，此操作不可撤销！',function(){clearAllSessions();renderSessions();refreshDash();toast('已清空全部对话','ok')});
+}
+
+// ================================================================
+// 系统设置
+// ================================================================
+function loadSettings(){
+  var s=JSON.parse(localStorage.getItem('aichat_settings')||'{}');
+  document.getElementById('setMood').checked = s.showMood!==false;
+  document.getElementById('setQuick').checked = s.showQuick!==false;
+}
+function saveSettings(){
+  var s={showMood:document.getElementById('setMood').checked, showQuick:document.getElementById('setQuick').checked};
+  localStorage.setItem('aichat_settings',JSON.stringify(s));
+  toast('设置已保存','ok');
+}
+function exportData(){
+  var data={roles:getCustomRoles(),config:getConfig(),sessions:getSessions(),settings:JSON.parse(localStorage.getItem('aichat_settings')||'{}'),exportedAt:new Date().toISOString()};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='xinyu-backup-'+Date.now()+'.json';a.click();URL.revokeObjectURL(url);
+  toast('数据已导出','ok');
+}
+function importData(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{var data=JSON.parse(e.target.result);
+      if(data.roles)sv(KEYS.roles,data.roles);if(data.sessions)sv(KEYS.sessions,data.sessions);
+      if(data.config)sv(KEYS.config,data.config);if(data.settings)localStorage.setItem('aichat_settings',JSON.stringify(data.settings));
+      toast('数据已导入','ok');renderRoleGrid();renderSessions();refreshDash();
+    }catch(e){toast('文件格式错误','err')}
+  };
+  reader.readAsText(file);input.value='';
+}
+
+// ================================================================
+// Confirm Dialog
+// ================================================================
+var cfmCb = null;
+function showConfirm(title,msg,cb){document.getElementById('cfmTitle').textContent=title;document.getElementById('cfmMsg').textContent=msg;cfmCb=cb;document.getElementById('confirmOvl').classList.add('open')}
+function closeConfirm(){document.getElementById('confirmOvl').classList.remove('open');cfmCb=null}
+function runConfirm(){if(cfmCb)cfmCb();closeConfirm()}
+
+// ================================================================
+// Helpers
+// ================================================================
+function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='show'+(type?' '+type:'');setTimeout(function(){t.className=''},2500)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// Init
+refreshDash();
+</script>
+</body>
+</html>
