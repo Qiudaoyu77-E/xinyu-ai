@@ -134,14 +134,56 @@ html, body {
 #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #334155; color: #fff; padding: 12px 24px; border-radius: 100px; font-size: 0.9rem; font-weight: 500; transition: 0.4s; z-index: 9999; }
 #toast.show { transform: translateX(-50%) translateY(0); }
 
-@media(max-width: 900px) {
-  .app { padding: 0; gap: 0; }
-  .sidebar { position: fixed; left: -300px; top: 0; bottom: 0; z-index: 1000; width: 280px; border-radius: 0; transition: left 0.3s; }
-  .sidebar.open { left: 0; }
-  .sidebar.open + .sidebar-mask { display: block; }
-  .chat-area { border: none; border-radius: 0; }
-  .menu-btn { display: block; }
-  .msg-row { max-width: 92%; }
+@media(max-width: 768px) {
+  .app { padding: 0; gap: 0; overflow: hidden; position: fixed; inset: 0; }
+  .sidebar { 
+    position: fixed; 
+    left: -280px; 
+    top: 0; 
+    bottom: 0; 
+    z-index: 2000; 
+    width: 280px; 
+    border-radius: 0; 
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #0f172a;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+  .sidebar.open { transform: translateX(280px); }
+  .sidebar-mask { z-index: 1999 !important; }
+  .chat-area { border: none; border-radius: 0; position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
+  .menu-btn { display: flex !important; align-items: center; justify-content: center; width: 44px; height: 44px; }
+  .msg-row { max-width: 95%; }
+  
+  /* 竖屏适配：确保输入框在底部 */
+  .messages { flex: 1; padding: 15px; padding-bottom: 20px; }
+  .input-bar { 
+    padding: 10px 15px; 
+    padding-bottom: calc(15px + env(safe-area-inset-bottom)); 
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+  }
+  .chat-header { 
+    height: 60px; 
+    padding: 0 15px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+  }
+
+  /* 手机端欢迎页顶部导航 */
+  #mobileNav {
+    display: flex;
+    height: 60px;
+    align-items: center;
+    padding: 0 15px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.8);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+  }
 }
 
 /* Admin Panel */
@@ -172,6 +214,12 @@ html, body {
   <div class="sidebar-mask" onclick="toggleSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:998"></div>
 
   <main class="chat-area">
+    <!-- 手机端顶部常驻导航 (仅在欢迎页显示) -->
+    <div id="mobileNav" style="display:none">
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div style="margin-left:12px; font-weight:700">O-O AI 私密空间</div>
+    </div>
+
     <div class="chat-header" id="chatHeader" style="display:none">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
       <div class="role-avatar" id="headerAvatar"></div>
@@ -430,11 +478,18 @@ function selectRole(id) {
   const r = PRIVATE_REGISTRY[currentUser].roles.find(x => x.id === id);
   currentRole = r;
   document.getElementById('welcomeView').style.display = 'none';
+  document.getElementById('mobileNav').style.display = 'none';
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('messages').style.display = 'flex';
   document.getElementById('inputBar').style.display = 'flex';
   document.getElementById('headerAvatar').textContent = r.avatar;
   document.getElementById('headerName').textContent = r.name;
+  
+  // 手机端选中后关闭菜单
+  if (window.innerWidth <= 768) {
+    const s = document.querySelector('.sidebar');
+    if (s.classList.contains('open')) toggleSidebar();
+  }
   
   const h = storeLoad('u_'+currentUser+'_sessions_'+id, []);
   if (h.length === 0 && r.opener) {
