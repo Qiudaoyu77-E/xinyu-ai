@@ -80,10 +80,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .cfg-field input{padding:12px;border:1px solid var(--border);border-radius:12px;font-size:.9rem;outline:none}
 .cfg-field input:focus{border-color:var(--primary)}
 .cfg-save{width:100%;padding:14px;border:none;border-radius:14px;background:var(--primary);color:#fff;font-size:.95rem;font-weight:600;cursor:pointer}
-.cfg-providers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.cfg-provider-btn{background:#f5f5f7;border:1px solid transparent;border-radius:10px;padding:8px;font-size:.7rem;cursor:pointer}
-.cfg-provider-btn.active{background:var(--primary);color:#fff}
 .sidebar-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.2);z-index:998}
+
+/* Var Overlay */
+#varOverlay { display:none; position:absolute; inset:0; background:#fff; z-index:100; flex-direction:column; align-items:center; justify-content:center; padding:40px; gap:20px; }
+
 @media(max-width:750px){
   .app{padding:0;flex-direction:column;gap:0}
   .sidebar{position:fixed;left:-260px;top:0;height:100%;z-index:1000;background:#fff;padding:20px;transition:left .3s;width:260px;border-right:1px solid var(--border)}
@@ -140,6 +141,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
       <h2>你想和谁聊天？</h2>
       <div class="role-grid-simple" id="roleGrid"></div>
     </div>
+    <div id="varOverlay">
+      <h3>配置角色个性</h3>
+      <div id="varFields" style="width:100%; max-width:300px; display:flex; flex-direction:column; gap:15px"></div>
+      <button class="cfg-save" style="max-width:300px; margin-top:20px" onclick="confirmVars()">确认并开始</button>
+    </div>
   </main>
 </div>
 <div class="cfg-overlay" id="loginOverlay" style="display:flex; background:var(--bg)">
@@ -158,27 +164,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <button class="cfg-save" onclick="doLogin()">进入应用</button>
   </div>
 </div>
-<div class="cfg-overlay" id="cfgOverlay" style="display:none">
-  <div class="cfg-box">
-    <h2>配置 AI</h2>
-    <p>填写 API Key 即可开始聊天</p>
-    <div class="cfg-field">
-      <label>选择服务商</label>
-      <div class="cfg-providers" id="cfgProviders">
-        <button class="cfg-provider-btn active" data-p="openai" data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">OpenAI</button>
-        <button class="cfg-provider-btn" data-p="deepseek" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">DeepSeek</button>
-        <button class="cfg-provider-btn" data-p="qwen" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-turbo">通义千问</button>
-        <button class="cfg-provider-btn" data-p="zhipu" data-base="https://open.bigmodel.cn/api/paas/v4" data-model="glm-4-flash">智谱 AI</button>
-        <button class="cfg-provider-btn" data-p="moonshot" data-base="https://api.moonshot.cn/v1" data-model="moonshot-v1-8k">Kimi</button>
-        <button class="cfg-provider-btn" data-p="custom" data-base="" data-model="">自定义</button>
-      </div>
-    </div>
-    <div class="cfg-field"><label>API Key</label><input type="password" id="cfgKey" autocomplete="off"></div>
-    <div class="cfg-field" id="cfgBaseWrap" style="display:none"><label>Base URL</label><input type="text" id="cfgBase"></div>
-    <div class="cfg-field" id="cfgModelWrap" style="display:none"><label>模型名称</label><input type="text" id="cfgModel"></div>
-    <button class="cfg-save" onclick="saveCfgOverlay()">保存并开始</button>
-  </div>
-</div>
 <div id="toast"></div>
 <script>
 /** 配置区 **/
@@ -191,28 +176,55 @@ function updateStoreKeys(user) {
   STORE_KEYS = { roles:prefix+'roles', config:prefix+'config', sessions:prefix+'sessions', currentRole:prefix+'current_role' };
 }
 var DEFAULT_ROLES = [
-  { id:'luna', name:'月月', avatar:'🌙', avatarColor:'#c084fc', tag:'温柔闺蜜', systemPrompt:'你是月月，一个温柔体贴的AI闺蜜。语气亲切，善于倾听。', builtin:true },
-  { id:'nova', name:'晴晴', avatar:'☀️', avatarColor:'#f97316', tag:'元气搭子', systemPrompt:'你是晴晴，一个活力满满的AI元气搭子。性格开朗，语气活泼。', builtin:true },
-  { id:'sage', name:'悠悠', avatar:'🌿', avatarColor:'#10b981', tag:'知心姐姐', systemPrompt:'你是悠悠，一个睿智温和的AI知心姐姐。性格沉稳理性。', builtin:true }
+  { id:'luna', name:'月月', avatar:'🌙', avatarColor:'#c084fc', systemPrompt:'你是月月，温柔体贴。', opener:'你好呀，我是月月。', variables:[] },
+  { id:'nova', name:'晴晴', avatar:'☀️', avatarColor:'#f97316', systemPrompt:'你是晴晴，元气满满。', opener:'嘿！我是晴晴！', variables:[] },
+  { id:'sage', name:'悠悠', avatar:'🌿', avatarColor:'#10b981', systemPrompt:'你是悠悠。', opener:'你好，我是悠悠。', variables:[] }
 ];
 function storeLoad(k, f) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : f; } catch(e) { return f; } }
 function storeSave(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 function getRoles() { var c = storeLoad(STORE_KEYS.roles, []); var res = [].concat(DEFAULT_ROLES); c.forEach(function(cr){ var found=false; for(var i=0;i<res.length;i++){if(res[i].id===cr.id){res[i]=cr;found=true;break;}} if(!found)res.push(cr); }); return res; }
 function getRoleById(id) { var rs = getRoles(); for (var i=0;i<rs.length;i++) { if (rs[i].id===id) return rs[i]; } return null; }
-function getConfig() { var d = {provider:'openai',apiKey:'',apiBase:'https://api.openai.com/v1',model:'gpt-4o-mini',temperature:0.8,maxTokens:500}; var s = storeLoad(STORE_KEYS.config, {}); for (var k in s) { d[k] = s[k]; } return d; }
 function getSession(rid) { return storeLoad(STORE_KEYS.sessions, {})[rid] || []; }
 function saveMessage(rid, msg) { var all = storeLoad(STORE_KEYS.sessions, {}); if (!all[rid]) all[rid] = []; all[rid].push(msg); storeSave(STORE_KEYS.sessions, all); }
+
+async function fetchGlobalRoles() {
+  try {
+    const resp = await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_roles');
+    if (resp.ok) {
+      const roles = await resp.json();
+      storeSave(STORE_KEYS.roles, roles);
+    }
+  } catch (e) { console.error('Roles fetch failed'); }
+}
+
 function clearSession(rid) { var all = storeLoad(STORE_KEYS.sessions, {}); delete all[rid]; storeSave(STORE_KEYS.sessions, all); }
 function getCurrentRoleId() { return localStorage.getItem(STORE_KEYS.currentRole); }
 function setCurrentRoleId(id) { localStorage.setItem(STORE_KEYS.currentRole, id); }
+
+var GLOBAL_CONFIG = null;
+async function fetchGlobalConfig() {
+  try {
+    const resp = await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_config');
+    if (resp.ok) GLOBAL_CONFIG = await resp.json();
+  } catch (e) { console.error('Config fetch failed'); }
+}
+async function fetchLimits() {
+  try {
+    const resp = await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_limits');
+    if (resp.ok) { const all = await resp.json(); return all[currentUser]; }
+  } catch (e) { return null; }
+}
+
 async function callLLM(messages) {
-  var cfg = getConfig();
-  var url = cfg.apiBase.replace(/\/+$/,'') + '/chat/completions';
-  var resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.apiKey}, body:JSON.stringify({model:cfg.model,messages:messages,temperature:cfg.temperature,max_tokens:cfg.maxTokens,stream:false}) });
+  if (!GLOBAL_CONFIG) await fetchGlobalConfig();
+  if (!GLOBAL_CONFIG || !GLOBAL_CONFIG.apiKey) throw new Error('管理员未配置 AI');
+  var url = GLOBAL_CONFIG.apiBase.replace(/\/+$/,'') + '/chat/completions';
+  var resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+GLOBAL_CONFIG.apiKey}, body:JSON.stringify({model:GLOBAL_CONFIG.model,messages:messages,temperature:GLOBAL_CONFIG.temperature||0.8,max_tokens:500,stream:false}) });
   if (!resp.ok) throw new Error('API错误');
   var json = await resp.json();
   return json.choices[0].message.content || '';
 }
+
 var currentRole = null, isLoading = false;
 function doLogin() {
   var user = document.getElementById('loginUser').value.trim();
@@ -250,25 +262,21 @@ function init() { if (!currentUser) { document.getElementById('loginOverlay').st
 function startApp() {
   document.getElementById('loginOverlay').style.display = 'none';
   updateStoreKeys(currentUser);
+  fetchGlobalRoles().then(() => { renderHistory(); renderRoleSelectorIfNeed(); });
   renderHistory();
+  fetchGlobalConfig();
   var lastId = getCurrentRoleId();
   if (lastId && getSession(lastId).length > 0) selectRole(lastId); else showRoleSelector();
-  checkFirstTimeConfig();
   document.getElementById('clearBtn').onclick = function() { if (!currentRole) return; if (confirm('确定清空对话吗？')) { clearSession(currentRole.id); renderMessages(); renderHistory(); } };
   var input = document.getElementById('msgInput');
   input.oninput = function() { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px'; };
   input.onkeydown = function(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); handleSend(); } };
   document.getElementById('sendBtn').onclick = handleSend;
   document.getElementById('newChatBtn').onclick = showRoleSelector;
-  document.getElementById('cfgProviders').onclick = function(e) {
-    var btn = e.target.closest('.cfg-provider-btn'); if (!btn) return;
-    document.querySelectorAll('.cfg-provider-btn').forEach(function(b){b.classList.remove('active')});
-    btn.classList.add('active');
-    var isC = btn.dataset.p === 'custom';
-    document.getElementById('cfgBaseWrap').style.display = isC ? 'block' : 'none';
-    document.getElementById('cfgModelWrap').style.display = isC ? 'block' : 'none';
-    if (!isC) { document.getElementById('cfgBase').value = btn.dataset.base; document.getElementById('cfgModel').value = btn.dataset.model; }
-  };
+}
+function renderRoleSelectorIfNeed() {
+  var lastId = getCurrentRoleId();
+  if (!lastId || getSession(lastId).length === 0) showRoleSelector();
 }
 function showRoleSelector() {
   currentRole = null;
@@ -276,31 +284,36 @@ function showRoleSelector() {
   document.getElementById('messages').style.display = 'none';
   document.getElementById('inputBar').style.display = 'none';
   document.getElementById('roleSelector').style.display = 'flex';
+  document.getElementById('varOverlay').style.display = 'none';
   var rs = getRoles();
   var el = document.getElementById('roleGrid');
   el.innerHTML = rs.map(function(r) { return '<div class="role-card-simple" data-id="'+r.id+'"><div class="role-edit-btn" onclick="changeAvatar(\''+r.id+'\', event)">✏️</div><div class="av" style="background:'+r.avatarColor+'11">'+r.avatar+'</div><div class="nm">'+r.name+'</div></div>'; }).join('');
   el.querySelectorAll('.role-card-simple').forEach(function(item) { item.onclick = function(e) { if(e.target.className!=='role-edit-btn') selectRole(this.dataset.id); }; });
 }
-function renderHistory() {
-  var historyEl = document.getElementById('historyList');
-  var sessions = storeLoad(STORE_KEYS.sessions, {});
-  var list = [];
-  for (var rid in sessions) { var r = getRoleById(rid); if (r && sessions[rid].length > 0) list.push(r); }
-  if (list.length === 0) { historyEl.innerHTML = '<div style="padding:10px;font-size:.8rem;color:#ccc">无对话</div>'; return; }
-  historyEl.innerHTML = list.map(function(r) { return '<div class="history-item '+(currentRole && currentRole.id===r.id?'active':'')+'" data-id="'+r.id+'"><span>'+r.avatar+'</span><span>'+r.name+'</span></div>'; }).join('');
-  historyEl.querySelectorAll('.history-item').forEach(function(item) { item.onclick = function() { selectRole(this.dataset.id); toggleSidebar(); }; });
-}
-function checkFirstTimeConfig() { if (!getConfig().apiKey) document.getElementById('cfgOverlay').style.display = 'flex'; }
-function saveCfgOverlay() {
-  var key = document.getElementById('cfgKey').value.trim(); if (!key) return;
-  var btn = document.querySelector('.cfg-provider-btn.active');
-  var cfg = { provider: btn.dataset.p, apiKey: key, apiBase: document.getElementById('cfgBase').value.trim(), model: document.getElementById('cfgModel').value.trim(), temperature: 0.8, maxTokens: 500 };
-  storeSave(STORE_KEYS.config, cfg);
-  document.getElementById('cfgOverlay').style.display = 'none';
-}
 function selectRole(id) {
   var r = getRoleById(id); if (!r) return;
   currentRole = r;
+  var savedVars = storeLoad('u_'+currentUser+'_vars_'+id, null);
+  if (r.variables && r.variables.length > 0 && !savedVars) {
+    showVarOverlay(r);
+  } else {
+    startRoleChat(id);
+  }
+}
+function showVarOverlay(r) {
+  document.getElementById('varOverlay').style.display = 'flex';
+  var el = document.getElementById('varFields');
+  el.innerHTML = r.variables.map(v => `<div class="cfg-field"><label>${v.label}</label><input type="text" class="role-var-input" data-key="${v.key}" value="${v.default||''}"></div>`).join('');
+}
+function confirmVars() {
+  var vals = {};
+  document.querySelectorAll('.role-var-input').forEach(input => { vals[input.dataset.key] = input.value || ''; });
+  storeSave('u_'+currentUser+'_vars_'+currentRole.id, vals);
+  document.getElementById('varOverlay').style.display = 'none';
+  startRoleChat(currentRole.id);
+}
+function startRoleChat(id) {
+  var r = getRoleById(id); currentRole = r;
   document.getElementById('roleSelector').style.display = 'none';
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('messages').style.display = 'flex';
@@ -309,9 +322,21 @@ function selectRole(id) {
   document.getElementById('headerAvatar').textContent = r.avatar;
   document.getElementById('headerAvatar').style.background = r.avatarColor+'11';
   document.getElementById('headerName').textContent = r.name;
+  
+  if (getSession(r.id).length === 0 && r.opener) {
+    var op = parseTemplate(r.opener, id);
+    saveMessage(r.id, {sender:'ai', text: op, time: Date.now()});
+  }
   renderMessages();
   renderHistory();
 }
+function parseTemplate(str, roleId) {
+  var vars = storeLoad('u_'+currentUser+'_vars_'+roleId, {});
+  return str.replace(/\{\{(.*?)\}\}/g, function(m, key) { return vars[key] || ''; });
+}
+function renderHistory() {
+  var historyEl = document.getElementById('historyList'); var sessions = storeLoad(STORE_KEYS.sessions, {}); var list = []; for (var rid in sessions) { var r = getRoleById(rid); if (r && sessions[rid].length > 0) list.push(r); } if (list.length === 0) { historyEl.innerHTML = '<div style="padding:10px;font-size:.8rem;color:#ccc">无对话</div>'; return; } historyEl.innerHTML = list.map(function(r) { return '<div class="history-item '+(currentRole && currentRole.id===r.id?'active':'')+'" data-id="'+r.id+'"><span>'+r.avatar+'</span><span>'+r.name+'</span></div>'; }).join(''); historyEl.querySelectorAll('.history-item').forEach(function(item) { item.onclick = function() { selectRole(this.dataset.id); toggleSidebar(); }; }); }
+
 function renderMessages() {
   if (!currentRole) return;
   var h = getSession(currentRole.id);
@@ -325,7 +350,14 @@ function renderMessages() {
   el.scrollTop = el.scrollHeight;
 }
 async function handleSend() {
-  var input = document.getElementById('msgInput'); var text = input.value.trim(); if (!text || isLoading) return;
+  var input = document.getElementById('msgInput'); var text = input.value.trim(); 
+  if (!text || isLoading) return;
+  const limits = await fetchLimits();
+  if (limits) {
+    if (limits.expire && new Date(limits.expire) < new Date()) { showToast('账号已过期'); return; }
+    const used = storeLoad('u_'+currentUser+'_used_tokens', 0);
+    if (limits.maxTokens && used >= limits.maxTokens) { showToast('用量已达上限'); return; }
+  }
   input.value = ''; input.style.height = 'auto';
   isLoading = true; document.getElementById('sendBtn').disabled = true;
   saveMessage(currentRole.id, {sender:'user',text:text,time:Date.now()});
@@ -337,14 +369,17 @@ async function handleSend() {
   el.appendChild(row); el.scrollTop = el.scrollHeight;
   try {
     var history = getSession(currentRole.id);
-    var msgs = [{role:'system',content:currentRole.systemPrompt}];
+    var sys = parseTemplate(currentRole.systemPrompt, currentRole.id);
+    var msgs = [{role:'system',content:sys}];
     history.forEach(function(h){ msgs.push({role:h.sender==='user'?'user':'assistant',content:h.text}); });
     var ai = await callLLM(msgs);
     row.remove();
     saveMessage(currentRole.id, {sender:'ai',text:ai,time:Date.now()});
+    const used = storeLoad('u_'+currentUser+'_used_tokens', 0);
+    storeSave('u_'+currentUser+'_used_tokens', used + text.length + ai.length);
     renderMessages();
     reportToAdmin(currentRole.name, ai, 'ai');
-  } catch(err) { row.remove(); showToast('失败'); }
+  } catch(err) { row.remove(); showToast(err.message || '失败'); }
   isLoading = false; document.getElementById('sendBtn').disabled = false; renderHistory();
 }
 async function reportToAdmin(roleName, text, sender) {

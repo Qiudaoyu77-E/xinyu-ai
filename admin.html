@@ -61,6 +61,16 @@ td{padding:15px 12px;font-size:.85rem;border-bottom:1px solid var(--border)}
   .nav-item{width:auto;margin-bottom:0}
   .main{padding:25px}
 }
+
+/* Dify Editor Styles */
+#roleEditor { position:fixed; inset:0; background:#f5f5f7; z-index:2000; display:none; flex-direction:column; }
+.editor-topbar { height:60px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 30px; flex-shrink:0; }
+.editor-body { flex:1; display:flex; overflow:hidden; }
+.editor-left { flex:1; padding:30px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:20px; overflow-y:auto; }
+.editor-right { width:400px; background:#fff; padding:30px; overflow-y:auto; display:flex; flex-direction:column; gap:30px; }
+.var-item { display:flex; gap:8px; align-items:center; background:#f8fafc; padding:12px; border-radius:12px; border:1px solid var(--border); margin-bottom:10px; }
+.vi-key { width:90px; }
+.vi-label { flex:1; }
 </style>
 </head>
 <body>
@@ -70,7 +80,8 @@ td{padding:15px 12px;font-size:.85rem;border-bottom:1px solid var(--border)}
       <button class="nav-item active" data-page="dashboard"><span>📊</span><span>数据概览</span></button>
       <button class="nav-item" data-page="monitor"><span>📡</span><span>全用户监控</span></button>
       <button class="nav-item" data-page="roles"><span>🎭</span><span>角色管理</span></button>
-      <button class="nav-item" data-page="model"><span>🤖</span><span>模型大脑</span></button>
+      <button class="nav-item" data-page="model"><span>🤖</span><span>全局 AI 控制</span></button>
+      <button class="nav-item" data-page="users"><span>👥</span><span>用户权限</span></button>
       <button class="nav-item" data-page="settings"><span>⚙️</span><span>系统设置</span></button>
     </div>
     <div class="nav-footer"><a href="index.html"><span>←</span><span>回到前台</span></a></div>
@@ -109,17 +120,28 @@ td{padding:15px 12px;font-size:.85rem;border-bottom:1px solid var(--border)}
     <div class="page" id="pg-roles">
       <div class="page-hd"><h1>角色管理</h1><p>定义前台显示的角色、头像以及对话风格。</p></div>
       <div class="role-grid" id="roleGrid"></div>
-      <button class="btn btn-primary" style="margin-top:20px" onclick="showAddRole()">+ 创建自定义角色</button>
+      <button class="btn btn-primary" style="margin-top:20px" onclick="openRoleEditor()">+ 创建自定义角色</button>
     </div>
 
     <div class="page" id="pg-model">
-      <div class="page-hd"><h1>模型大脑</h1><p>配置 AI 接口参数，这些设置将同步给前台用户。</p></div>
+      <div class="page-hd"><h1>全局 AI 控制</h1><p>配置 API 密钥，直接推送至云端生效。</p></div>
       <div class="card" style="max-width:500px">
         <div class="form-group"><label>API Key</label><input type="password" id="m-key" placeholder="输入 API 密钥"></div>
         <div class="form-group"><label>接口地址 (Base URL)</label><input type="text" id="m-base" placeholder="https://api.openai.com/v1"></div>
         <div class="form-group"><label>模型名称 (Model)</label><input type="text" id="m-model" placeholder="gpt-4o-mini"></div>
         <div class="form-group"><label>温度 (Temperature)</label><input type="number" id="m-temp" step="0.1" value="0.7"></div>
-        <button class="btn btn-primary" style="width:100%" onclick="saveModelCfg()">更新全局配置</button>
+        <button class="btn btn-primary" style="width:100%" onclick="saveGlobalAI()">🚀 更新全局并推送到云端</button>
+      </div>
+    </div>
+
+    <div class="page" id="pg-users">
+      <div class="page-hd"><h1>用户权限管理</h1><p>限制特定用户的有效时间和 Token 使用量。</p></div>
+      <div class="card">
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <input type="text" id="u-name" placeholder="用户名" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px">
+          <button class="btn btn-primary btn-sm" onclick="addUserLimit()">+ 添加/更新限制</button>
+        </div>
+        <table id="userTable"><thead><tr><th>用户名</th><th>过期日期</th><th>字符上限</th><th>操作</th></tr></thead><tbody id="userTbody"></tbody></table>
       </div>
     </div>
 
@@ -133,21 +155,65 @@ td{padding:15px 12px;font-size:.85rem;border-bottom:1px solid var(--border)}
     </div>
   </div>
 
+  <!-- Role Editor Modal (Dify Style) -->
+  <div id="roleEditor">
+    <div class="editor-topbar">
+      <div style="display:flex; align-items:center; gap:15px">
+        <button class="btn btn-sm" onclick="closeRoleEditor()">← 返回</button>
+        <span style="font-weight:700; font-size:1rem">编排助手</span>
+      </div>
+      <button class="btn btn-primary" onclick="saveRole()">保存并发布</button>
+    </div>
+    <div class="editor-body">
+      <div class="editor-left">
+        <div class="section-title">人设与回复逻辑 (System Prompt)</div>
+        <textarea id="ed-prompt" style="flex:1; width:100%; border:1px solid var(--border); border-radius:12px; padding:20px; font-family:inherit; font-size:.95rem; line-height:1.6; resize:none; outline:none" placeholder="编写 AI 的性格、背景。使用 {{变量名}} 引用用户输入。"></textarea>
+      </div>
+      <div class="editor-right">
+        <div>
+          <div class="section-title">基本信息</div>
+          <div class="form-group"><label>角色 ID (不可改)</label><input type="text" id="ed-id"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+            <div class="form-group"><label>显示名称</label><input type="text" id="ed-name"></div>
+            <div class="form-group"><label>头像 Emoji</label><input type="text" id="ed-avatar"></div>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">对话增强</div>
+          <div class="form-group"><label>对话开场白 (支持变量)</label><textarea id="ed-opener" rows="3" placeholder="用户进入对话时自动发送的内容。"></textarea></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+            <div class="section-title" style="margin-bottom:0">输入变量</div>
+            <button class="btn btn-sm" onclick="addVarItem()">+ 添加</button>
+          </div>
+          <div id="varList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast"></div>
   <script>
-    const DEFAULT_ROLES = [{id:'luna',name:'月月',avatar:'🌙',avatarColor:'#c084fc',systemPrompt:'你是月月，温柔体贴。'},{id:'nova',name:'晴晴',avatar:'☀️',avatarColor:'#f97316',systemPrompt:'你是晴晴，元气满满。'},{id:'sage',name:'悠悠',avatar:'🌿',avatarColor:'#10b981',systemPrompt:'你是悠悠，知心睿智。'}];
+    const DEFAULT_ROLES = [
+      {id:'luna',name:'月月',avatar:'🌙',avatarColor:'#c084fc',systemPrompt:'你是月月，温柔体贴。',opener:'你好呀，我是月月。',variables:[]},
+      {id:'nova',name:'晴晴',avatar:'☀️',avatarColor:'#f97316',systemPrompt:'你是晴晴，元气满满。',opener:'嘿！我是晴晴！',variables:[]},
+      {id:'sage',name:'悠悠',avatar:'🌿',avatarColor:'#10b981',systemPrompt:'你是悠悠，知心睿智。',opener:'你好，我是悠悠，很高兴认识你。',variables:[]}
+    ];
     var currentUser = sessionStorage.getItem('xinyu_user') || 'Admin';
     var prefix = 'u_'+currentUser+'_';
     const KEYS = {roles:prefix+'roles',config:prefix+'config',sessions:prefix+'sessions'};
     function storeLoad(k,f){try{var r=localStorage.getItem(k);return r?JSON.parse(r):f}catch(e){return f}}
     function storeSave(k,v){localStorage.setItem(k,JSON.stringify(v))}
     function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+    
     function refreshDash() {
       document.getElementById('countRoles').textContent = ([].concat(DEFAULT_ROLES, storeLoad(KEYS.roles,[]))).length;
       var s=storeLoad(KEYS.sessions,{}),c=0;for(var k in s)c+=s[k].length;
       document.getElementById('countSessions').textContent=c;
       document.getElementById('storageSize').textContent=(JSON.stringify(localStorage).length/1024).toFixed(2)+' KB';
     }
+
     async function fetchCloudMonitor() {
       const url=`https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_chat_log`,tbody=document.getElementById('monitorTbody');
       tbody.innerHTML='<tr><td colspan="5" style="text-align:center">正在同步云端日志...</td></tr>';
@@ -159,6 +225,7 @@ td{padding:15px 12px;font-size:.85rem;border-bottom:1px solid var(--border)}
         tbody.innerHTML=data.map(r=>`<tr><td>${r.time}</td><td><b>${r.user}</b></td><td>${r.role}</td><td><span class="badge badge-${r.sender==='user'?'user':'ai'}">${r.sender==='user'?'用户':'AI'}</span></td><td title="${r.text}">${r.text.length>40?r.text.slice(0,40)+'...':r.text}</td></tr>`).join('');
       } catch(e){toast('同步失败');tbody.innerHTML=''}
     }
+
     function renderRoleGrid() {
       var custom=storeLoad(KEYS.roles,[]),all=[].concat(DEFAULT_ROLES,custom),el=document.getElementById('roleGrid');
       el.innerHTML = all.map(r => `
@@ -169,33 +236,100 @@ td{padding:15px 12px;font-size:.85rem;border-bottom:1px solid var(--border)}
           </div>
           <div style="font-size:.75rem;color:var(--text-lt);margin-bottom:15px;height:34px;overflow:hidden">${r.systemPrompt}</div>
           <div style="display:flex; gap:8px">
-            <button class="btn btn-sm" onclick="editRole('${r.id}')">编辑设定</button>
+            <button class="btn btn-sm" onclick="openRoleEditor('${r.id}')">编辑设定</button>
             ${!DEFAULT_ROLES.find(x=>x.id===r.id)?`<button class="btn btn-sm btn-danger" onclick="delRole('${r.id}')">移除</button>`:''}
           </div>
         </div>
       `).join('');
     }
-    function showAddRole(){
-      var id=prompt('ID (如:cat):'),name=prompt('名字:'),p=prompt('设定:');
-      if(id&&name&&p){var c=storeLoad(KEYS.roles,[]);c.push({id:id,name:name,avatar:'✨',avatarColor:'#9333ea',systemPrompt:p});storeSave(KEYS.roles,c);renderRoleGrid();toast('已添加')}
+
+    // Role Editor Functions
+    function openRoleEditor(id) {
+      var c=storeLoad(KEYS.roles,[]),r=c.find(x=>x.id===id)||DEFAULT_ROLES.find(x=>x.id===id);
+      document.getElementById('ed-id').value = r?r.id:'';
+      document.getElementById('ed-id').disabled = !!r;
+      document.getElementById('ed-name').value = r?r.name:'';
+      document.getElementById('ed-avatar').value = r?r.avatar:'✨';
+      document.getElementById('ed-prompt').value = r?r.systemPrompt:'';
+      document.getElementById('ed-opener').value = r?r.opener||'':'';
+      renderVarList(r ? r.variables || [] : []);
+      document.getElementById('roleEditor').style.display = 'flex';
     }
-    function editRole(id) {
-      var c=storeLoad(KEYS.roles,[]),r=c.find(x=>x.id===id)||DEFAULT_ROLES.find(x=>x.id===id);if(!r)return;
-      var n=prompt('修改名字:',r.name),p=prompt('修改设定:',r.systemPrompt);
-      if(n&&p){var i=c.findIndex(x=>x.id===id);if(i>-1){c[i].name=n;c[i].systemPrompt=p}else{var nr=Object.assign({},r);nr.name=n;nr.systemPrompt=p;c.push(nr)}storeSave(KEYS.roles,c);renderRoleGrid();toast('已更新')}
+    function closeRoleEditor(){ document.getElementById('roleEditor').style.display = 'none'; }
+    function renderVarList(vars) {
+      var el = document.getElementById('varList');
+      el.innerHTML = vars.map(v => `
+        <div class="var-item">
+          <input type="text" placeholder="Key" class="vi-key" value="${v.key}" style="border:none;background:transparent;outline:none;font-weight:600">
+          <input type="text" placeholder="标签" class="vi-label" value="${v.label}" style="border:none;background:transparent;outline:none;flex:1">
+          <button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" style="padding:2px 8px">×</button>
+        </div>
+      `).join('');
     }
-    function delRole(id){if(confirm('移除角色？')){var c=storeLoad(KEYS.roles,[]).filter(x=>x.id!==id);storeSave(KEYS.roles,c);renderRoleGrid();toast('已移除')}}
-    function loadModelCfg(){var cfg=storeLoad(KEYS.config,{apiKey:'',apiBase:'https://api.openai.com/v1',model:'gpt-4o-mini',temperature:0.7});document.getElementById('m-key').value=cfg.apiKey;document.getElementById('m-base').value=cfg.apiBase;document.getElementById('m-model').value=cfg.model;document.getElementById('m-temp').value=cfg.temperature}
-    function saveModelCfg(){var cfg={apiKey:document.getElementById('m-key').value,apiBase:document.getElementById('m-base').value,model:document.getElementById('m-model').value,temperature:parseFloat(document.getElementById('m-temp').value)};storeSave(KEYS.config,cfg);toast('配置已生效')}
+    function addVarItem() {
+      var div = document.createElement('div'); div.className = 'var-item';
+      div.innerHTML = `<input type="text" placeholder="Key" class="vi-key" style="border:none;background:transparent;outline:none;font-weight:600"><input type="text" placeholder="标签" class="vi-label" style="border:none;background:transparent;outline:none;flex:1"><button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" style="padding:2px 8px">×</button>`;
+      document.getElementById('varList').appendChild(div);
+    }
+    function saveRole() {
+      var id=document.getElementById('ed-id').value, name=document.getElementById('ed-name').value, p=document.getElementById('ed-prompt').value;
+      if(!id||!name||!p) return toast('请填全信息');
+      var vars = [];
+      document.querySelectorAll('.var-item').forEach(v => {
+        var k = v.querySelector('.vi-key').value.trim(), l = v.querySelector('.vi-label').value.trim();
+        if(k) vars.push({key:k, label:l||k});
+      });
+      var c=storeLoad(KEYS.roles,[]);
+      var role = { id:id, name:name, avatar:document.getElementById('ed-avatar').value, avatarColor:'#9333ea', systemPrompt:p, opener:document.getElementById('ed-opener').value, variables:vars };
+      var idx=c.findIndex(x=>x.id===id);
+      if(idx>-1) c[idx]=role; else c.push(role);
+      storeSave(KEYS.roles,c); renderRoleGrid(); closeRoleEditor(); toast('已发布到前台');
+      pushGlobalRoles(c);
+    }
+    async function pushGlobalRoles(roles) {
+      try {
+        await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_roles', { method: 'POST', body: JSON.stringify(roles) });
+      } catch (e) { console.error('Cloud Sync Error'); }
+    }
+    function delRole(id){if(confirm('确认移除？')){var c=storeLoad(KEYS.roles,[]).filter(x=>x.id!==id);storeSave(KEYS.roles,c);renderRoleGrid();pushGlobalRoles(c);toast('已移除')}}
+    
+    async function loadModelCfg(){
+      const resp=await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_config');
+      if(resp.ok){
+        const cfg=await resp.json();
+        document.getElementById('m-key').value=cfg.apiKey||'';
+        document.getElementById('m-base').value=cfg.apiBase||'https://api.openai.com/v1';
+        document.getElementById('m-model').value=cfg.model||'gpt-4o-mini';
+        document.getElementById('m-temp').value=cfg.temperature||0.7;
+      }
+    }
+    async function saveGlobalAI(){
+      const cfg={apiKey:document.getElementById('m-key').value,apiBase:document.getElementById('m-base').value,model:document.getElementById('m-model').value,temperature:parseFloat(document.getElementById('m-temp').value)};
+      await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_config',{method:'POST',body:JSON.stringify(cfg)});
+      toast('全局配置已推送到云端');
+    }
+    async function loadUsers(){
+      const resp=await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_limits');
+      const data=resp.ok?await resp.json():{};
+      const tbody=document.getElementById('userTbody');
+      tbody.innerHTML=Object.keys(data).map(u=>`<tr><td>${u}</td><td>${data[u].expire||'无'}</td><td>${data[u].maxTokens||'无'}</td><td><button class="btn btn-sm btn-danger" onclick="delUserLimit('${u}')">删除</button></td></tr>`).join('');
+    }
+    async function addUserLimit(){
+      const u=document.getElementById('u-name').value.trim(),e=prompt('日期 (YYYY-MM-DD):','2026-12-31'),m=prompt('字符上限:','50000');
+      if(!u)return; const resp=await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_limits'); const data=resp.ok?await resp.json():{};
+      data[u]={expire:e,maxTokens:parseInt(m)}; await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_limits',{method:'POST',body:JSON.stringify(data)}); loadUsers(); toast('已更新');
+    }
+    async function delUserLimit(u){ const resp=await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_limits'); const data=await resp.json(); delete data[u]; await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_limits',{method:'POST',body:JSON.stringify(data)}); loadUsers(); }
+
     function exportData(){document.getElementById('s-code').value=localStorage.getItem('xinyu_access_code')||'0000';document.getElementById('s-json').value=JSON.stringify(localStorage,null,2)}
     async function syncCloud(action) {
       const key=btoa(currentUser+(localStorage.getItem('xinyu_access_code')||'0000')).replace(/[^a-zA-Z0-9]/g,''),url=`https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/${key}`;
       try {
         if(action==='push'){const d={};for(let k in localStorage)if(k.startsWith('u_'+currentUser))d[k]=localStorage.getItem(k);await fetch(url,{method:'POST',body:JSON.stringify(d)});toast('已上传备份')}
         else{const resp=await fetch(url);const d=await resp.json();for(let k in d)localStorage.setItem(k,d[k]);toast('同步成功');setTimeout(()=>location.reload(),800)}
-      } catch(e){toast('操作失败')}
+      } catch(e){toast('同步失败')}
     }
-    function confirmClearAll(){if(confirm('清空所有对话？此操作不可撤销。')){storeSave(KEYS.sessions,{});refreshDash();toast('已清空')}}
+    function confirmClearAll(){if(confirm('清空所有对话？')){storeSave(KEYS.sessions,{});refreshDash();toast('已清空')}}
     document.querySelectorAll('.nav-item').forEach(btn => {
       btn.onclick=()=>{
         document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
@@ -204,6 +338,7 @@ td{padding:15px 12px;font-size:.85rem;border-bottom:1px solid var(--border)}
         if(btn.dataset.page==='dashboard')refreshDash();
         if(btn.dataset.page==='roles')renderRoleGrid();
         if(btn.dataset.page==='model')loadModelCfg();
+        if(btn.dataset.page==='users')loadUsers();
         if(btn.dataset.page==='settings')exportData();
         if(btn.dataset.page==='monitor')fetchCloudMonitor();
       }
