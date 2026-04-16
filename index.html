@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>心语 · AI陪伴</title>
+<title>O-O · AI陪伴</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -86,7 +86,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <body>
 <div class="app">
   <aside class="sidebar">
-    <div class="logo"><h1>心语</h1></div>
+    <div class="logo"><h1>O-O</h1></div>
     <button class="new-chat-btn" id="newChatBtn"><span>+</span> 新对话</button>
     <div style="margin-top:20px">
       <div class="sidebar-label">历史对话</div>
@@ -97,6 +97,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <button class="header-btn" onclick="syncCloud('pull')">☁️ 从云端同步</button>
       </div>
       <div style="margin-top:40px; border-top:1px solid var(--border); padding-top:20px">
+        <button class="header-btn" style="opacity:.5; margin-bottom:8px" onclick="changeAccessCode()">🔑 修改访问码</button>
         <button class="header-btn" style="opacity:.5" onclick="doLogout()">🚪 退出登录</button>
       </div>
     </div>
@@ -130,7 +131,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div class="cfg-overlay" id="loginOverlay" style="display:flex; background:var(--bg)">
   <div class="cfg-box" style="border:none; box-shadow:none">
     <div style="font-size:3rem; text-align:center; margin-bottom:10px">🦢</div>
-    <h2>开启你的心语</h2>
+    <h2>开启你的 O-O</h2>
     <p>请输入访问信息以继续</p>
     <div class="cfg-field">
       <label>你的称呼</label>
@@ -167,7 +168,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div id="toast"></div>
 <script>
 /** 配置区 **/
-const ACCESS_CODE = 'xinyu2024'; 
+const DEFAULT_CODE = '0000';
+var ACCESS_CODE = localStorage.getItem('xinyu_access_code') || DEFAULT_CODE; 
 var currentUser = sessionStorage.getItem('xinyu_user');
 var STORE_KEYS = {};
 function updateStoreKeys(user) {
@@ -203,11 +205,39 @@ function doLogin() {
   var pass = document.getElementById('loginPass').value.trim();
   if (!user || !pass) { showToast('请填写完整信息'); return; }
   if (pass !== ACCESS_CODE) { showToast('访问码不对哦'); return; }
+  
   sessionStorage.setItem('xinyu_user', user);
   currentUser = user;
-  startApp();
+  
+  if (ACCESS_CODE === DEFAULT_CODE) {
+    forceChangeAccessCode();
+  } else {
+    startApp();
+  }
 }
 function doLogout() { sessionStorage.removeItem('xinyu_user'); window.location.reload(); }
+function forceChangeAccessCode() {
+  var newCode = prompt('为了安全，请修改初始访问码（不能是0000）：');
+  if (!newCode || newCode.trim() === '' || newCode.trim() === DEFAULT_CODE) {
+    alert('必须修改访问码才能继续使用！');
+    forceChangeAccessCode();
+  } else {
+    localStorage.setItem('xinyu_access_code', newCode.trim());
+    ACCESS_CODE = newCode.trim();
+    showToast('访问码修改成功');
+    startApp();
+  }
+}
+function changeAccessCode() {
+  var newCode = prompt('请输入新的访问码：', ACCESS_CODE);
+  if (newCode && newCode.trim() && newCode.trim() !== DEFAULT_CODE) {
+    localStorage.setItem('xinyu_access_code', newCode.trim());
+    ACCESS_CODE = newCode.trim();
+    showToast('访问码已修改');
+  } else if (newCode.trim() === DEFAULT_CODE) {
+    showToast('不能修改为初始访问码');
+  }
+}
 function init() { if (!currentUser) { document.getElementById('loginOverlay').style.display = 'flex'; return; } startApp(); }
 function startApp() {
   document.getElementById('loginOverlay').style.display = 'none';
