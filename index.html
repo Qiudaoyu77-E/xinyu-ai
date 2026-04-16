@@ -23,15 +23,15 @@ html, body {
   font-family: var(--font);
   background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 100%);
   color: var(--text);
+  margin: 0;
+  padding: 0;
   overflow: hidden;
-  position: fixed;
   width: 100%;
 }
 
 .app {
   display: flex;
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
@@ -134,55 +134,46 @@ html, body {
 #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #334155; color: #fff; padding: 12px 24px; border-radius: 100px; font-size: 0.9rem; font-weight: 500; transition: 0.4s; z-index: 9999; }
 #toast.show { transform: translateX(-50%) translateY(0); }
 
+#mobileNav { display: none; }
+
 @media(max-width: 768px) {
-  .app { padding: 0; gap: 0; overflow: hidden; position: fixed; inset: 0; }
+  .app { padding: 0; gap: 0; flex-direction: column; height: 100%; position: relative; }
   .sidebar { 
     position: fixed; 
-    left: -280px; 
+    left: 0; 
     top: 0; 
     bottom: 0; 
-    z-index: 2000; 
+    z-index: 5000; 
     width: 280px; 
     border-radius: 0; 
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
     background: #0f172a;
     box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    display: flex; /* 确保 display 不是 none */
   }
-  .sidebar.open { transform: translateX(280px); }
-  .sidebar-mask { z-index: 1999 !important; }
-  .chat-area { border: none; border-radius: 0; position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
-  .menu-btn { display: flex !important; align-items: center; justify-content: center; width: 44px; height: 44px; }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-mask { z-index: 4999 !important; display: none; }
+  .chat-area { border: none; border-radius: 0; flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+  .menu-btn { display: flex !important; }
   .msg-row { max-width: 95%; }
   
-  /* 竖屏适配：确保输入框在底部 */
-  .messages { flex: 1; padding: 15px; padding-bottom: 20px; }
+  .messages { flex: 1; padding: 15px; -webkit-overflow-scrolling: touch; }
   .input-bar { 
     padding: 10px 15px; 
-    padding-bottom: calc(15px + env(safe-area-inset-bottom)); 
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border);
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
+    background: #1e293b;
   }
-  .chat-header { 
-    height: 60px; 
-    padding: 0 15px;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(10px);
-  }
+  .chat-header { height: 60px; padding: 0 15px; }
 
-  /* 手机端欢迎页顶部导航 */
   #mobileNav {
     display: flex;
     height: 60px;
     align-items: center;
     padding: 0 15px;
     border-bottom: 1px solid var(--border);
-    background: rgba(15, 23, 42, 0.8);
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 10;
+    background: #1e293b;
+    flex-shrink: 0;
   }
 }
 
@@ -215,7 +206,7 @@ html, body {
 
   <main class="chat-area">
     <!-- 手机端顶部常驻导航 (仅在欢迎页显示) -->
-    <div id="mobileNav" style="display:none">
+    <div id="mobileNav">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
       <div style="margin-left:12px; font-weight:700">O-O AI 私密空间</div>
     </div>
@@ -239,10 +230,10 @@ html, body {
       </button>
     </div>
 
-    <div id="welcomeView" style="display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center">
-      <div style="font-size:4rem; margin-bottom:20px">✨</div>
+    <div id="welcomeView" style="display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; overflow-y:auto">
+      <div style="font-size:3rem; margin-bottom:15px">✨</div>
       <h2>欢迎来到 1v1 私密空间</h2>
-      <p style="color:var(--text-lt); max-width:300px; margin-top:10px">这里是你与专属灵魂的唯一通道。请点击左侧对话开始。</p>
+      <p style="color:var(--text-lt); max-width:280px; margin-top:10px; font-size:0.9rem">这里是你与专属灵魂的唯一通道。请点击左上角图标开启陪伴。</p>
     </div>
   </main>
 </div>
@@ -327,12 +318,6 @@ html, body {
 <div id="toast"></div>
 
 <script>
-/** 移动端控制 **/
-function toggleSidebar() {
-  const sb = document.querySelector('.sidebar');
-  sb.classList.toggle('open');
-}
-
 /** Admin 逻辑 **/
 let logoClicks = 0;
 document.querySelector('.logo').onclick = () => {
@@ -476,20 +461,23 @@ function renderHistory() {
 
 function selectRole(id) {
   const r = PRIVATE_REGISTRY[currentUser].roles.find(x => x.id === id);
+  if(!r) return;
   currentRole = r;
+  
+  // 切换显示状态
   document.getElementById('welcomeView').style.display = 'none';
-  document.getElementById('mobileNav').style.display = 'none';
+  const mNav = document.getElementById('mobileNav');
+  if(mNav) mNav.style.display = 'none';
+  
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('messages').style.display = 'flex';
   document.getElementById('inputBar').style.display = 'flex';
   document.getElementById('headerAvatar').textContent = r.avatar;
   document.getElementById('headerName').textContent = r.name;
   
-  // 手机端选中后关闭菜单
-  if (window.innerWidth <= 768) {
-    const s = document.querySelector('.sidebar');
-    if (s.classList.contains('open')) toggleSidebar();
-  }
+  // 手机端选中后自动收起侧边栏
+  const s = document.querySelector('.sidebar');
+  if (s.classList.contains('open')) toggleSidebar();
   
   const h = storeLoad('u_'+currentUser+'_sessions_'+id, []);
   if (h.length === 0 && r.opener) {
