@@ -143,6 +143,14 @@ html, body {
   .menu-btn { display: block; }
   .msg-row { max-width: 92%; }
 }
+
+/* Admin Panel */
+.admin-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 3000; }
+.admin-box { background: #1e293b; border: 1px solid var(--border); border-radius: 20px; padding: 30px; width: 90%; max-width: 500px; }
+.admin-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.admin-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+.stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
+.stat-val { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
 </style>
 </head>
 <body>
@@ -237,9 +245,87 @@ html, body {
   </div>
 </div>
 
+<!-- Admin Overlay -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-box">
+    <div class="admin-header">
+      <h3>God Mode · 系统控制台</h3>
+      <button onclick="hideAdmin()" style="background:none; border:none; color:#fff; cursor:pointer">✕</button>
+    </div>
+    <div class="admin-stats">
+      <div class="stat-card">
+        <div style="font-size:0.7rem; color:var(--text-lt)">注册用户</div>
+        <div class="stat-val" id="statUsers">0</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:0.7rem; color:var(--text-lt)">存储状态</div>
+        <div class="stat-val" style="font-size:0.9rem" id="statStorage">Normal</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>控制台密码验证</label>
+      <input type="password" id="adminPass" placeholder="输入控制台密码">
+    </div>
+    <button class="primary-btn" id="adminLoginBtn" onclick="verifyAdmin()" style="margin-top:10px">验证进入</button>
+    
+    <div id="adminContent" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:20px">
+      <div style="font-size:0.8rem; color:var(--text-lt); margin-bottom:10px">高级操作</div>
+      <button class="primary-btn" onclick="clearAllData()" style="background:#ef4444; margin-bottom:10px">⚠️ 强制清除本地缓存</button>
+      <button class="primary-btn" onclick="copySyncKey()" style="background:#334155">复制当前同步 Key</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
+/** 移动端控制 **/
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  sb.classList.toggle('open');
+}
+
+/** Admin 逻辑 **/
+let logoClicks = 0;
+document.querySelector('.logo').onclick = () => {
+  logoClicks++;
+  if (logoClicks === 5) {
+    logoClicks = 0;
+    showAdmin();
+  }
+  setTimeout(() => { if(logoClicks>0) logoClicks=0; }, 3000);
+};
+
+function showAdmin() {
+  document.getElementById('adminOverlay').style.display = 'flex';
+  document.getElementById('statUsers').textContent = Object.keys(PRIVATE_REGISTRY).length;
+}
+function hideAdmin() {
+  document.getElementById('adminOverlay').style.display = 'none';
+  document.getElementById('adminPass').value = '';
+  document.getElementById('adminContent').style.display = 'none';
+}
+function verifyAdmin() {
+  const p = document.getElementById('adminPass').value;
+  if (p === 'admin666') {
+    document.getElementById('adminContent').style.display = 'block';
+    document.getElementById('adminLoginBtn').style.display = 'none';
+    showToast('上帝模式已开启');
+  } else {
+    showToast('口令错误');
+  }
+}
+function clearAllData() {
+  if (confirm('危险：这将清空所有用户配置和聊天记录！确定吗？')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+function copySyncKey() {
+  const key = localStorage.getItem('xinyu_sync_key');
+  navigator.clipboard.writeText(key).then(() => showToast('Key 已复制到剪贴板'));
+}
+
 /** 
  * 1v1 私人定制表 (PRIVATE_REGISTRY)
  * 只有在这里配置的用户才能进入，且拥有完全不同的人设。
