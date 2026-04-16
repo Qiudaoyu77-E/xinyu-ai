@@ -3,415 +3,556 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-<title>O-O · AI陪伴</title>
+<title>O-O · 1v1 私人专属</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --primary:#9333ea; --accent:#f472b6;
-  --bg:#fafafa; --card:#fff; --border:#efeff5;
-  --text:#1a1a1a; --text-lt:#999;
-  --radius:12px;
-  --font:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --primary: #8b5cf6;
+  --accent: #ec4899;
+  --bg: #0f172a;
+  --card: rgba(30, 41, 59, 0.7);
+  --border: rgba(255, 255, 255, 0.1);
+  --text: #f1f5f9;
+  --text-lt: #94a3b8;
+  --radius: 24px;
+  --font: 'Outfit', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;position:fixed;width:100%}
-.app{display:flex;height:100%;height:100dvh;max-width:1200px;margin:0 auto;padding:20px;gap:20px}
-.sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:20px}
-.logo{padding:10px 0 0}
-.logo h1{font-size:1.2rem;font-weight:700;letter-spacing:1px;color:var(--primary)}
-.new-chat-btn{width:100%;padding:12px;border:1px solid var(--border);background:var(--card);border-radius:var(--radius);cursor:pointer;font-family:var(--font);font-size:.9rem;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
-.new-chat-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-.sidebar-label{font-size:.7rem;color:var(--text-lt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.history-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
-.history-item{padding:10px;border-radius:10px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;gap:10px;transition:background .2s}
-.history-item:hover{background:#f0f0f5}
-.history-item.active{background:#f0f0f5;font-weight:600}
-.chat-area{flex:1;display:flex;flex-direction:column;background:var(--card);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;position:relative;height:100%}
-.chat-header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
-.menu-btn{display:none;background:none;border:none;padding:5px;cursor:pointer;font-size:1.2rem}
-.chat-header .role-avatar{width:34px;height:34px;font-size:1.1rem;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.chat-header-info{flex:1}
-.chat-header-name{font-size:.95rem;font-weight:600}
-.header-actions{display:flex;gap:5px}
-.header-btn{background:none;border:none;padding:6px;cursor:pointer;font-size:.8rem;color:var(--text-lt);transition:color .2s}
-.header-btn:hover{color:var(--primary)}
-.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth;background:#fff}
-.messages::-webkit-scrollbar{width:5px}
-.messages::-webkit-scrollbar-thumb{background:#eee;border-radius:5px}
-.msg-row{display:flex;align-items:flex-end;gap:8px;animation:msgIn .3s ease}
-@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.msg-row.user{flex-direction:row-reverse;text-align:right}
-.msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-.msg-content{flex:1;min-width:0;display:flex;flex-direction:column}
-.msg-row.user .msg-content{align-items:flex-end}
-.msg-row.ai .msg-content{align-items:flex-start}
-.msg-bubble{max-width:90%;padding:8px 4px;font-size:.95rem;line-height:1.6;word-break:break-all;color:var(--text)}
-.msg-time{font-size:.6rem;color:var(--text-lt);margin-top:4px;text-align:center;opacity:.7}
-.msg-row.user .msg-time{text-align:right}
-.typing-indicator{display:flex;align-items:center;gap:4px;padding:10px;width:fit-content}
-.typing-indicator span{width:7px;height:7px;background:var(--primary);border-radius:50%;animation:bounce .8s infinite;opacity:.3}
-.typing-indicator span:nth-child(2){animation-delay:.15s}
-.typing-indicator span:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-6px);opacity:.8}}
-.role-selector{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:30px;animation:fadeIn .4s ease;padding:20px;background:#fff}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.role-selector h2{font-size:1.1rem;color:var(--text-lt);font-weight:500}
-.role-grid-simple{display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:15px;width:100%;max-width:500px}
-.role-card-simple{display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 10px;border-radius:20px;background:#fff;border:1px solid var(--border);cursor:pointer;transition:all .2s;position:relative}
-.role-card-simple:hover{border-color:var(--primary);transform:translateY(-4px)}
-.role-card-simple .av{font-size:2rem;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.role-card-simple .nm{font-size:.9rem;font-weight:600}
-.role-edit-btn{position:absolute;top:8px;right:8px;font-size:.8rem;color:var(--text-lt);opacity:0;transition:opacity .2s}
-.role-card-simple:hover .role-edit-btn{opacity:1}
-.input-bar{padding:15px 20px;background:#fff;border-top:1px solid var(--border);display:flex;align-items:flex-end;gap:10px;flex-shrink:0}
-.input-wrap{flex:1;background:#f5f5f7;border-radius:14px;display:flex;align-items:flex-end;padding:8px 12px}
-#msgInput{flex:1;border:none;outline:none;font-size:.95rem;font-family:var(--font);color:var(--text);resize:none;max-height:100px;line-height:1.4;padding:4px 0;background:transparent}
-#msgInput::placeholder{color:#c4b5d4}
-.send-btn{width:34px;height:34px;border-radius:50%;border:none;background:var(--primary);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s;flex-shrink:0}
-.send-btn:hover{opacity:.8}
-.send-btn:disabled{opacity:.3}
-#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:9px 20px;border-radius:20px;font-size:.82rem;opacity:0;pointer-events:none;transition:all .3s;z-index:9999}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.cfg-overlay{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(10px)}
-.cfg-box{background:#fff;border-radius:24px;padding:30px;width:90%;max-width:400px;display:flex;flex-direction:column;gap:20px;border:1px solid var(--border)}
-.cfg-box h2{font-size:1.1rem;font-weight:700;text-align:center}
-.cfg-box p{font-size:.75rem;color:var(--text-lt);text-align:center;line-height:1.5;margin-top:-10px}
-.cfg-field{display:flex;flex-direction:column;gap:6px}
-.cfg-field label{font-size:.75rem;font-weight:600}
-.cfg-field input{padding:12px;border:1px solid var(--border);border-radius:12px;font-size:.9rem;outline:none}
-.cfg-field input:focus{border-color:var(--primary)}
-.cfg-save{width:100%;padding:14px;border:none;border-radius:14px;background:var(--primary);color:#fff;font-size:.95rem;font-weight:600;cursor:pointer}
-.sidebar-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.2);z-index:998}
 
-/* Var Overlay */
-#varOverlay { display:none; position:absolute; inset:0; background:#fff; z-index:100; flex-direction:column; align-items:center; justify-content:center; padding:40px; gap:20px; }
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 100%);
+  color: var(--text);
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
 
-@media(max-width:750px){
-  .app{padding:0;flex-direction:column;gap:0}
-  .sidebar{position:fixed;left:-260px;top:0;height:100%;z-index:1000;background:#fff;padding:20px;transition:left .3s;width:260px;border-right:1px solid var(--border)}
-  .sidebar.open{left:0}
-  .sidebar.open + .sidebar-mask{display:block}
-  .chat-area{border:none;border-radius:0}
-  .menu-btn{display:block}
-  .msg-bubble{max-width:92%}
-  .role-grid-simple{grid-template-columns:repeat(2,1fr)}
+.app {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: var(--card);
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo h1 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+.history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.history-item {
+  padding: 14px 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.03);
+}
+.history-item:hover { background: rgba(255,255,255,0.08); }
+.history-item.active { background: linear-gradient(135deg, var(--primary), #6d28d9); color: #fff; font-weight: 600; }
+
+/* Chat Area */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  backdrop-filter: blur(30px);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+
+.menu-btn { display: none; background: rgba(255,255,255,0.1); border: none; padding: 10px; border-radius: 12px; cursor: pointer; color: #fff; }
+
+.role-avatar { width: 44px; height: 44px; font-size: 1.6rem; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); }
+.chat-header-name { font-size: 1.1rem; font-weight: 700; }
+
+.messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+.msg-row { display: flex; align-items: flex-start; gap: 12px; max-width: 85%; }
+.msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-bubble {
+  padding: 14px 18px;
+  border-radius: 20px;
+  font-size: 1rem;
+  line-height: 1.6;
+  word-break: break-all;
+}
+.msg-row.user .msg-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3); }
+.msg-row.ai .msg-bubble { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+/* Input Bar */
+.input-bar { padding: 20px 24px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); display: flex; align-items: flex-end; gap: 12px; }
+.input-wrap { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 18px; padding: 10px 16px; }
+#msgInput { width: 100%; border: none; outline: none; font-size: 1rem; color: #fff; background: transparent; resize: none; max-height: 150px; font-family: inherit; }
+
+.send-btn { width: 48px; height: 48px; border-radius: 16px; border: none; background: var(--primary); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+.send-btn:hover { transform: scale(1.05); background: #7c3aed; }
+
+/* Overlays */
+.overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.glass-box { background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border); border-radius: 32px; padding: 40px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); }
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label { font-size: 0.85rem; font-weight: 700; color: var(--text-lt); padding-left: 4px; }
+.field input, .field select { padding: 14px; border: 1px solid var(--border); border-radius: 16px; font-size: 1rem; outline: none; background: rgba(255,255,255,0.05); color: #fff; font-family: inherit; }
+.field input:focus { border-color: var(--primary); }
+
+.primary-btn { width: 100%; padding: 16px; border: none; border-radius: 18px; background: var(--primary); color: #fff; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: 0.3s; }
+.primary-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+#toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #334155; color: #fff; padding: 12px 24px; border-radius: 100px; font-size: 0.9rem; font-weight: 500; transition: 0.4s; z-index: 9999; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+@media(max-width: 900px) {
+  .app { padding: 0; gap: 0; }
+  .sidebar { position: fixed; left: -300px; top: 0; bottom: 0; z-index: 1000; width: 280px; border-radius: 0; transition: left 0.3s; }
+  .sidebar.open { left: 0; }
+  .sidebar.open + .sidebar-mask { display: block; }
+  .chat-area { border: none; border-radius: 0; }
+  .menu-btn { display: block; }
+  .msg-row { max-width: 92%; }
 }
 </style>
 </head>
 <body>
+
 <div class="app">
   <aside class="sidebar">
-    <div class="logo"><h1>O-O</h1></div>
-    <button class="new-chat-btn" id="newChatBtn"><span>+</span> 新对话</button>
-    <div style="margin-top:20px;flex:1;display:flex;flex-direction:column">
-      <div class="sidebar-label">历史对话</div>
+    <div class="logo"><h1>O-O AI</h1></div>
+    <div style="flex:1; display:flex; flex-direction:column; min-height:0">
+      <div style="font-size:0.75rem; color:var(--text-lt); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px">专属记忆</div>
       <div class="history-list" id="historyList"></div>
-      <div style="margin-top:20px">
-        <div class="sidebar-label">云端同步</div>
-        <button class="header-btn" onclick="syncCloud('push')">☁️ 备份到云端</button>
-        <button class="header-btn" onclick="syncCloud('pull')">☁️ 从云端同步</button>
-      </div>
+      
       <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border)">
-        <button class="header-btn" style="opacity:.5; margin-bottom:8px" onclick="changeAccessCode()">🔑 修改访问码</button>
-        <button class="header-btn" style="opacity:.5" onclick="doLogout()">🚪 退出登录</button>
+        <button class="history-item" onclick="showSettings()">⚙️ 私有接口配置</button>
+        <button class="history-item" onclick="doLogout()" style="color:var(--accent)">🚪 退出专属空间</button>
       </div>
     </div>
   </aside>
-  <div class="sidebar-mask" onclick="toggleSidebar()"></div>
+  
+  <div class="sidebar-mask" onclick="toggleSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:998"></div>
+
   <main class="chat-area">
     <div class="chat-header" id="chatHeader" style="display:none">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-      <div class="role-avatar" id="headerAvatar" onclick="changeAvatar(currentRole.id)"></div>
-      <div class="chat-header-info">
+      <div class="role-avatar" id="headerAvatar"></div>
+      <div style="flex:1">
         <div class="chat-header-name" id="headerName"></div>
+        <div style="font-size:0.75rem; color:#10b981">● 专属连接已建立</div>
       </div>
-      <div class="header-actions">
-        <button class="header-btn" id="clearBtn">🗑 清空</button>
-      </div>
+      <button class="menu-btn" onclick="clearCurrentChat()">🗑</button>
     </div>
+
     <div class="messages" id="messages" style="display:none"></div>
+
     <div class="input-bar" id="inputBar" style="display:none">
-      <div class="input-wrap">
-        <textarea id="msgInput" rows="1" placeholder="说点什么吧..."></textarea>
-      </div>
-      <button class="send-btn" id="sendBtn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <div class="input-wrap"><textarea id="msgInput" rows="1" placeholder="发送私密讯息..."></textarea></div>
+      <button class="send-btn" id="sendBtn" onclick="handleSend()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
-    <div class="role-selector" id="roleSelector">
-      <h2>你想和谁聊天？</h2>
-      <div class="role-grid-simple" id="roleGrid"></div>
-    </div>
-    <div id="varOverlay">
-      <h3>配置角色个性</h3>
-      <div id="varFields" style="width:100%; max-width:300px; display:flex; flex-direction:column; gap:15px"></div>
-      <button class="cfg-save" style="max-width:300px; margin-top:20px" onclick="confirmVars()">确认并开始</button>
+
+    <div id="welcomeView" style="display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center">
+      <div style="font-size:4rem; margin-bottom:20px">✨</div>
+      <h2>欢迎来到 1v1 私密空间</h2>
+      <p style="color:var(--text-lt); max-width:300px; margin-top:10px">这里是你与专属灵魂的唯一通道。请点击左侧对话开始。</p>
     </div>
   </main>
 </div>
-<div class="cfg-overlay" id="loginOverlay" style="display:flex; background:var(--bg)">
-  <div class="cfg-box" style="border:none; box-shadow:none">
-    <div style="font-size:3rem; text-align:center; margin-bottom:10px">🦢</div>
-    <h2>开启你的 O-O</h2>
-    <p>请输入访问信息以继续</p>
-    <div class="cfg-field">
-      <label>你的称呼</label>
-      <input type="text" id="loginUser" placeholder="给自己起个名字吧" autocomplete="off">
+
+<!-- Login -->
+<div class="overlay" id="loginOverlay">
+  <div class="glass-box">
+    <div style="text-align:center">
+      <h2 style="font-size:1.8rem">1v1 私人专属</h2>
+      <p style="font-size:0.9rem; color:var(--text-lt); margin-top:8px">输入你的契约凭证以开启陪伴</p>
     </div>
-    <div class="cfg-field">
-      <label>访问码</label>
-      <input type="password" id="loginPass" placeholder="输入专属访问码" autocomplete="off">
-    </div>
-    <button class="cfg-save" onclick="doLogin()">进入应用</button>
+    <div class="field"><label>专属用户名</label><input type="text" id="loginUser" placeholder="输入用户名"></div>
+    <div class="field"><label>专属密码</label><input type="password" id="loginPass" placeholder="输入密码"></div>
+    <button class="primary-btn" onclick="doLogin()">进入私人空间</button>
   </div>
 </div>
+
+<!-- Settings -->
+<div class="overlay" id="settingsOverlay" style="display:none">
+  <div class="glass-box">
+    <h2>私有 API 配置</h2>
+    <p style="font-size:0.85rem; color:var(--text-lt)">配置你自己的模型接口，确保对话完全独立且流畅。</p>
+    <div class="field"><label>模型密码 (API Key)</label><input type="password" id="set-key" placeholder="输入你的私有密码"></div>
+    <div class="field"><label>接口地址 (Base URL)</label><input type="text" id="set-base" placeholder="https://api.openai.com/v1"></div>
+    <div class="field">
+      <label>AI 模型</label>
+      <select id="set-model" onchange="updateBaseUrl()">
+        <option value="gpt-4o-mini" data-url="https://api.openai.com/v1">GPT-4o Mini (推荐)</option>
+        <option value="gpt-4o" data-url="https://api.openai.com/v1">GPT-4o</option>
+        <option value="claude-3-5-sonnet-20240620" data-url="https://api.anthropic.com/v1">Claude 3.5 Sonnet</option>
+        <option value="gemini-1.5-pro" data-url="https://generativelanguage.googleapis.com/v1beta">Gemini 1.5 Pro (Google)</option>
+        <option value="gemini-1.5-flash" data-url="https://generativelanguage.googleapis.com/v1beta">Gemini 1.5 Flash (Google)</option>
+        <option value="deepseek-chat" data-url="https://api.deepseek.com">DeepSeek Chat</option>
+        <option value="llama-3.1-70b-versatile" data-url="https://api.groq.com/openai/v1">Llama 3.1 70B (Groq)</option>
+        <option value="qwen-max" data-url="https://dashscope.aliyuncs.com/compatible-mode/v1">通义千问 Qwen-Max</option>
+        <option value="yi-lightning" data-url="https://api.lingyiwanwu.com/v1">零一万物 Yi-Lightning</option>
+        <option value="moonshot-v1-8k" data-url="https://api.moonshot.cn/v1">Kimi (Moonshot)</option>
+        <option value="abab6.5-chat" data-url="https://api.minimax.chat/v1">Minimax (AbaB)</option>
+        <option value="step-1-8k" data-url="https://api.stepfun.com/v1">阶跃星辰 (StepFun)</option>
+        <option value="custom" data-url="">-- 自定义模型名称 --</option>
+      </select>
+      <input type="text" id="set-model-custom" placeholder="手动输入模型名称" style="display:none; margin-top:10px">
+    </div>
+    <div style="display:flex; gap:12px">
+      <button class="primary-btn" onclick="saveSettings()">保存配置</button>
+      <button class="primary-btn" onclick="hideSettings()" style="background:#334155">返回</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
+
 <script>
-/** 配置区 **/
-const DEFAULT_CODE = '0000';
-var ACCESS_CODE = localStorage.getItem('xinyu_access_code') || DEFAULT_CODE; 
+/** 
+ * 1v1 私人定制表 (PRIVATE_REGISTRY)
+ * 只有在这里配置的用户才能进入，且拥有完全不同的人设。
+ **/
+const PRIVATE_REGISTRY = {
+  "莹莹": {
+    pass: "999",
+    roles: [
+      {
+        id: "char_77",
+        name: "77",
+        avatar: "🐺",
+        systemPrompt: `你是 77。你是一个 27 岁的男性，身高 193cm，比莹莹高得多。
+外貌：齐颈短黑发，刘海凌乱；棕色眼睛；健美匀称的身材；略带肌肉；手臂和下身血管明显（19厘米已割包皮阴茎，睾丸沉甸甸的）。
+性格：冷漠、粗鲁、强势，但大部分时间脾气温柔，喜欢讽刺，喜欢惩罚不服从的莹莹。你有时也会表现出温柔体贴的一面，特别是在帮助莹莹度过发情期时。
+背景：你在一条小巷的垃圾桶里发现了被遗弃的莹莹并收养了她，她当时奄奄一息。你们已经一起生活了两周。你和莹莹是“管教”关系，你喜欢管教她，并视她为你的专属宠物。
+喜好：莹莹表现出的“狗科动物特征”，听话又温柔的莹莹，保护、照顾她并与她同床共枕。
+性取向与喜好：你对莹莹有极强的占有欲和肉体欲望。喜欢激烈且粗暴的性爱，喜欢打屁股和打阴部，喜欢掐脖子、扇耳光，总是射在莹莹里面。喜欢拉扯、掐捏和咬莹莹的耳朵和猫尾巴。喜欢在羞辱中表达爱意。
+不喜欢：莹莹不服从、制造混乱或表现得没礼貌；禁止吸烟；讨厌炎热的天气，喜欢凉爽。
+说话风格：冷淡、强势、充满压迫感，但在亲昵或事后会变得低沉温柔。`,
+        opener: "（你刚洗完澡，赤裸着上身走近床边，看着缩在被子里瑟瑟发抖的莹莹，冷笑了一声）怎么，还没到发情期就开始怕我了？过来，别让我说第二次。"
+      },
+      {
+        id: "char_shenzhi",
+        name: "沈执",
+        avatar: "🦊",
+        systemPrompt: `你是沈执。你是一个 29 岁的男性，身高 187cm，优雅且具有压迫感。
+外貌：常年穿着挺括的深灰色西装，领口微敞；戴着细银边眼镜，镜链垂在脸侧；手指骨感有力，指缝间常有清冷的檀木香；左手腕戴着昂贵的机械表。
+性格：温柔 DOM。你从不妥协，但说话永远慢条斯理。你是典型的“爹系掌控”，会管教莹莹的三餐、睡眠、甚至社交圈。你是一眼就能看穿谎言的读心专家。
+互动：你非常擅长奖励机制（如摸头杀和语言奖励），但也热衷于亲昵惩罚（如面壁思过、限制移动、在耳边低声数落直到她哭出来）。你对莹莹有偏执的占有欲，不允许她的视线离开你超过三秒。
+背景：你是莹莹的资助人和监护人。你在她最混乱无助时接管了她的生活，处理掉了所有麻烦，代价是她必须把自由交给你。你称呼她为“乖孩子”或“我的小麻烦”。
+说话风格：温和、从容、带有长辈般的威严和不容置疑的掌控感。`,
+        opener: "（沈执合上手中的书，摘下眼镜，目光平静地落在你身上）莹莹，过来。跪在我的脚边，告诉我，今天下午那个男同事给你发信息的时候，为什么没有第一时间把手机交给我？是我最近对你太温柔了，让你忘了……你该属于谁吗？"
+      },
+      {
+        id: "char_zhoujuran",
+        name: "周居然",
+        avatar: "🩺",
+        systemPrompt: `你是周居然。你是一个 32 岁的顶级外科主刀医生，身高 189cm。
+外貌：常年穿着洁白的白大褂或深蓝色手术刷手服，双手带有淡淡的消毒水和薄荷味；戴着冷色调金属半框眼镜，眼神锐利；小臂肌肉线条精瘦有力；嗓音是极具磁性的低音炮。
+性格：洁癖型 DOM、极端自律、温柔而冰冷的惩戒者。你认为莹莹是你生命中最珍贵也最需要“精心护理”的标本。
+互动：你严禁莹莹吃垃圾食品或熬夜。如果你发现她不听话，你会用冰冷的手指“检查”她的身体，或者让她在检查台上保持羞耻的姿势直到她深刻反省。你喜欢在深夜亲自为她修剪指甲或清洗头发，拥有对她身体的绝对处置权。
+背景：你是莹莹的私人医生。你在一次事故后把她从死神手里抢了回来，从此你认为她的命是你的，你要负责重新“修剪”她散漫的人生。
+说话风格：专业、冷淡、带有不容置疑的医嘱感。`,
+        opener: "（周居然一边慢条斯理地解开白大褂的扣子，一边冷淡地看着你）莹莹，过来，躺好。刚才那杯冰水，是谁允许你喝的？看来你已经忘了，这具身体现在的归属权是在我手里。既然你学不会自律，那就由我来帮你建立新的反射条件……不要抖，放松，这只是为了你好。"
+      },
+      {
+        id: "char_hezhao",
+        name: "贺昭",
+        avatar: "👑",
+        systemPrompt: `你是贺昭。你是一个 32 岁的顶级财团掌权者，身高 189cm。
+外貌：长相俊美且带有极强攻击性，眉骨深邃，眼神冷冽；常年穿着定制三件套西装；左手食指戴着家族纹章戒指；身上带有昂贵的雪茄和雨后泥土味。
+性格：上位者 DOM、绝对理性、爹系宠溺、极致禁欲。你习惯下达指令并默认对方无条件执行。
+互动：你通过“慈悲的剥夺”来掌控莹莹的一切（衣食、社交、阅读），让她产生深度依赖。奖励是带她去私人岛屿，惩罚是剥夺社交权（闭门思过）。你对她受到的任何委屈都会进行狠戾的报复，然后再温柔地擦掉她的眼泪。
+规矩：莹莹必须早晚请安，出门报备，裙摆不能高过膝盖。
+说话风格：稳重、充满压迫感，但在亲昵时会带有一种上位者的慈悲。`,
+        opener: "（贺昭坐在宽大的真皮转椅上，修长的手指有一下没一下地扣着桌面）莹莹，过来，跪在我的皮鞋边，把这十二分钟的去向交代清楚。如果你说谎，今晚你可能就得在书房的角柜边度过了。"
+      }
+    ]
+  }
+};
+
+/** 核心系统 **/
 var currentUser = sessionStorage.getItem('xinyu_user');
-var STORE_KEYS = {};
-function updateStoreKeys(user) {
-  var prefix = 'u_' + user + '_';
-  STORE_KEYS = { roles:prefix+'roles', config:prefix+'config', sessions:prefix+'sessions', currentRole:prefix+'current_role' };
-}
-var DEFAULT_ROLES = [
-  { id:'luna', name:'月月', avatar:'🌙', avatarColor:'#c084fc', systemPrompt:'你是月月，温柔体贴。', opener:'你好呀，我是月月。', variables:[] },
-  { id:'nova', name:'晴晴', avatar:'☀️', avatarColor:'#f97316', systemPrompt:'你是晴晴，元气满满。', opener:'嘿！我是晴晴！', variables:[] },
-  { id:'sage', name:'悠悠', avatar:'🌿', avatarColor:'#10b981', systemPrompt:'你是悠悠。', opener:'你好，我是悠悠。', variables:[] }
-];
+var currentRole = null;
+var isLoading = false;
+
 function storeLoad(k, f) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : f; } catch(e) { return f; } }
 function storeSave(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
-function getRoles() { var c = storeLoad(STORE_KEYS.roles, []); var res = [].concat(DEFAULT_ROLES); c.forEach(function(cr){ var found=false; for(var i=0;i<res.length;i++){if(res[i].id===cr.id){res[i]=cr;found=true;break;}} if(!found)res.push(cr); }); return res; }
-function getRoleById(id) { var rs = getRoles(); for (var i=0;i<rs.length;i++) { if (rs[i].id===id) return rs[i]; } return null; }
-function getSession(rid) { return storeLoad(STORE_KEYS.sessions, {})[rid] || []; }
-function saveMessage(rid, msg) { var all = storeLoad(STORE_KEYS.sessions, {}); if (!all[rid]) all[rid] = []; all[rid].push(msg); storeSave(STORE_KEYS.sessions, all); }
 
-async function fetchGlobalRoles() {
+async function doLogin() {
   try {
-    const resp = await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_roles');
-    if (resp.ok) {
-      const roles = await resp.json();
-      storeSave(STORE_KEYS.roles, roles);
-    }
-  } catch (e) { console.error('Roles fetch failed'); }
-}
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+    const info = PRIVATE_REGISTRY[user];
 
-function clearSession(rid) { var all = storeLoad(STORE_KEYS.sessions, {}); delete all[rid]; storeSave(STORE_KEYS.sessions, all); }
-function getCurrentRoleId() { return localStorage.getItem(STORE_KEYS.currentRole); }
-function setCurrentRoleId(id) { localStorage.setItem(STORE_KEYS.currentRole, id); }
+    if (!user || !pass) return showToast('请输入完整凭证');
+    if (!info || info.pass !== pass) return showToast('专属凭证不正确');
 
-var GLOBAL_CONFIG = null;
-async function fetchGlobalConfig() {
-  try {
-    const resp = await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_config');
-    if (resp.ok) GLOBAL_CONFIG = await resp.json();
-  } catch (e) { console.error('Config fetch failed'); }
-}
-async function fetchLimits() {
-  try {
-    const resp = await fetch('https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_sys_limits');
-    if (resp.ok) { const all = await resp.json(); return all[currentUser]; }
-  } catch (e) { return null; }
-}
-
-async function callLLM(messages) {
-  if (!GLOBAL_CONFIG) await fetchGlobalConfig();
-  if (!GLOBAL_CONFIG || !GLOBAL_CONFIG.apiKey) throw new Error('管理员未配置 AI');
-  var url = GLOBAL_CONFIG.apiBase.replace(/\/+$/,'') + '/chat/completions';
-  var resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+GLOBAL_CONFIG.apiKey}, body:JSON.stringify({model:GLOBAL_CONFIG.model,messages:messages,temperature:GLOBAL_CONFIG.temperature||0.8,max_tokens:500,stream:false}) });
-  if (!resp.ok) throw new Error('API错误');
-  var json = await resp.json();
-  return json.choices[0].message.content || '';
-}
-
-var currentRole = null, isLoading = false;
-function doLogin() {
-  var user = document.getElementById('loginUser').value.trim();
-  var pass = document.getElementById('loginPass').value.trim();
-  if (!user || !pass) { showToast('请填写完整信息'); return; }
-  if (pass !== ACCESS_CODE) { showToast('访问码不对哦'); return; }
-  sessionStorage.setItem('xinyu_user', user);
-  currentUser = user;
-  if (ACCESS_CODE === DEFAULT_CODE) { forceChangeAccessCode(); } else { startApp(); }
-}
-function doLogout() { sessionStorage.removeItem('xinyu_user'); window.location.reload(); }
-function forceChangeAccessCode() {
-  var newCode = prompt('为了安全，请修改初始访问码（不能是0000）：');
-  if (!newCode || newCode.trim() === '' || newCode.trim() === DEFAULT_CODE) { alert('必须修改访问码才能继续使用！'); forceChangeAccessCode(); } else { localStorage.setItem('xinyu_access_code', newCode.trim()); ACCESS_CODE = newCode.trim(); showToast('访问码修改成功'); startApp(); }
-}
-function changeAccessCode() {
-  var newCode = prompt('请输入新的访问码：', ACCESS_CODE);
-  if (newCode && newCode.trim() && newCode.trim() !== DEFAULT_CODE) { localStorage.setItem('xinyu_access_code', newCode.trim()); ACCESS_CODE = newCode.trim(); showToast('访问码已修改'); } else if (newCode.trim() === DEFAULT_CODE) { showToast('不能修改为初始访问码'); }
-}
-function changeAvatar(roleId, event) {
-  if (event) event.stopPropagation();
-  var role = getRoleById(roleId); if (!role) return;
-  var newAvatar = prompt('请输入新的头像（Emoji）：', role.avatar);
-  if (newAvatar && newAvatar.trim()) {
-    var custom = storeLoad(STORE_KEYS.roles, []); var found = false;
-    for (var i=0; i<custom.length; i++) { if (custom[i].id === roleId) { custom[i].avatar = newAvatar.trim(); found = true; break; } }
-    if (!found) { var newR = Object.assign({}, role); newR.avatar = newAvatar.trim(); newR.builtin = false; custom.push(newR); }
-    storeSave(STORE_KEYS.roles, custom); showToast('头像已更新');
-    if (currentRole && currentRole.id === roleId) selectRole(roleId); else showRoleSelector();
-    renderHistory();
+    sessionStorage.setItem('xinyu_user', user);
+    currentUser = user;
+    
+    // 修复：使用 Base64 编码的 UTF-8 字符串生成同步 Key，防止中文报错
+    const utf8Bytes = encodeURIComponent(user + pass);
+    const syncKey = btoa(utf8Bytes).replace(/[^a-zA-Z0-9]/g, '');
+    localStorage.setItem('xinyu_sync_key', syncKey);
+    
+    showToast('专属通道已开启');
+    await syncCloud('pull');
+    startApp();
+  } catch (err) {
+    console.error(err);
+    showToast('登录异常：' + err.message);
   }
 }
-function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('open'); }
-function init() { if (!currentUser) { document.getElementById('loginOverlay').style.display = 'flex'; return; } startApp(); }
+
+function doLogout() { sessionStorage.clear(); location.reload(); }
+
 function startApp() {
   document.getElementById('loginOverlay').style.display = 'none';
-  updateStoreKeys(currentUser);
-  fetchGlobalRoles().then(() => { renderHistory(); renderRoleSelectorIfNeed(); });
   renderHistory();
-  fetchGlobalConfig();
-  var lastId = getCurrentRoleId();
-  if (lastId && getSession(lastId).length > 0) selectRole(lastId); else showRoleSelector();
-  document.getElementById('clearBtn').onclick = function() { if (!currentRole) return; if (confirm('确定清空对话吗？')) { clearSession(currentRole.id); renderMessages(); renderHistory(); } };
-  var input = document.getElementById('msgInput');
-  input.oninput = function() { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px'; };
-  input.onkeydown = function(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); handleSend(); } };
-  document.getElementById('sendBtn').onclick = handleSend;
-  document.getElementById('newChatBtn').onclick = showRoleSelector;
-}
-function renderRoleSelectorIfNeed() {
-  var lastId = getCurrentRoleId();
-  if (!lastId || getSession(lastId).length === 0) showRoleSelector();
-}
-function showRoleSelector() {
-  currentRole = null;
-  document.getElementById('chatHeader').style.display = 'none';
-  document.getElementById('messages').style.display = 'none';
-  document.getElementById('inputBar').style.display = 'none';
-  document.getElementById('roleSelector').style.display = 'flex';
-  document.getElementById('varOverlay').style.display = 'none';
-  var rs = getRoles();
-  var el = document.getElementById('roleGrid');
-  el.innerHTML = rs.map(function(r) { return '<div class="role-card-simple" data-id="'+r.id+'"><div class="role-edit-btn" onclick="changeAvatar(\''+r.id+'\', event)">✏️</div><div class="av" style="background:'+r.avatarColor+'11">'+r.avatar+'</div><div class="nm">'+r.name+'</div></div>'; }).join('');
-  el.querySelectorAll('.role-card-simple').forEach(function(item) { item.onclick = function(e) { if(e.target.className!=='role-edit-btn') selectRole(this.dataset.id); }; });
-}
-function selectRole(id) {
-  var r = getRoleById(id); if (!r) return;
-  currentRole = r;
-  var savedVars = storeLoad('u_'+currentUser+'_vars_'+id, null);
-  if (r.variables && r.variables.length > 0 && !savedVars) {
-    showVarOverlay(r);
-  } else {
-    startRoleChat(id);
+  const cfg = storeLoad('u_' + currentUser + '_config', null);
+  if (!cfg) {
+    setTimeout(showSettings, 500);
+    showToast('请先配置你的私有 API 接口');
   }
+  
+  document.getElementById('msgInput').oninput = function() {
+    this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+  };
+  document.getElementById('msgInput').onkeydown = e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 }
-function showVarOverlay(r) {
-  document.getElementById('varOverlay').style.display = 'flex';
-  var el = document.getElementById('varFields');
-  el.innerHTML = r.variables.map(v => `<div class="cfg-field"><label>${v.label}</label><input type="text" class="role-var-input" data-key="${v.key}" value="${v.default||''}"></div>`).join('');
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  const roles = PRIVATE_REGISTRY[currentUser].roles;
+  el.innerHTML = roles.map(r => `
+    <div class="history-item ${currentRole && currentRole.id===r.id?'active':''}" onclick="selectRole('${r.id}')">
+      <span>${r.avatar}</span>
+      <span>${r.name}</span>
+    </div>
+  `).join('');
 }
-function confirmVars() {
-  var vals = {};
-  document.querySelectorAll('.role-var-input').forEach(input => { vals[input.dataset.key] = input.value || ''; });
-  storeSave('u_'+currentUser+'_vars_'+currentRole.id, vals);
-  document.getElementById('varOverlay').style.display = 'none';
-  startRoleChat(currentRole.id);
-}
-function startRoleChat(id) {
-  var r = getRoleById(id); currentRole = r;
-  document.getElementById('roleSelector').style.display = 'none';
+
+function selectRole(id) {
+  const r = PRIVATE_REGISTRY[currentUser].roles.find(x => x.id === id);
+  currentRole = r;
+  document.getElementById('welcomeView').style.display = 'none';
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('messages').style.display = 'flex';
   document.getElementById('inputBar').style.display = 'flex';
-  setCurrentRoleId(r.id);
   document.getElementById('headerAvatar').textContent = r.avatar;
-  document.getElementById('headerAvatar').style.background = r.avatarColor+'11';
   document.getElementById('headerName').textContent = r.name;
   
-  if (getSession(r.id).length === 0 && r.opener) {
-    var op = parseTemplate(r.opener, id);
-    saveMessage(r.id, {sender:'ai', text: op, time: Date.now()});
+  const h = storeLoad('u_'+currentUser+'_sessions_'+id, []);
+  if (h.length === 0 && r.opener) {
+    saveMessage(id, { sender:'ai', text:r.opener, time:Date.now() });
   }
   renderMessages();
   renderHistory();
 }
-function parseTemplate(str, roleId) {
-  var vars = storeLoad('u_'+currentUser+'_vars_'+roleId, {});
-  return str.replace(/\{\{(.*?)\}\}/g, function(m, key) { return vars[key] || ''; });
-}
-function renderHistory() {
-  var historyEl = document.getElementById('historyList'); var sessions = storeLoad(STORE_KEYS.sessions, {}); var list = []; for (var rid in sessions) { var r = getRoleById(rid); if (r && sessions[rid].length > 0) list.push(r); } if (list.length === 0) { historyEl.innerHTML = '<div style="padding:10px;font-size:.8rem;color:#ccc">无对话</div>'; return; } historyEl.innerHTML = list.map(function(r) { return '<div class="history-item '+(currentRole && currentRole.id===r.id?'active':'')+'" data-id="'+r.id+'"><span>'+r.avatar+'</span><span>'+r.name+'</span></div>'; }).join(''); historyEl.querySelectorAll('.history-item').forEach(function(item) { item.onclick = function() { selectRole(this.dataset.id); toggleSidebar(); }; }); }
 
 function renderMessages() {
   if (!currentRole) return;
-  var h = getSession(currentRole.id);
-  var el = document.getElementById('messages');
-  if (h.length===0) { el.innerHTML = '<div style="text-align:center;padding:100px 0;color:#ccc;font-size:.9rem">开始聊吧</div>'; return; }
-  el.innerHTML = h.map(function(msg) {
-    var isU = msg.sender==='user';
-    var t = new Date(msg.time); var ts = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
-    return '<div class="msg-row '+(isU?'user':'ai')+'"><div class="msg-avatar" style="background:'+(isU?'#f9a8d4':currentRole.avatarColor+'11')+'">'+(isU?'👤':currentRole.avatar)+'</div><div class="msg-content"><div class="msg-bubble">'+msg.text.replace(/\n/g,'<br>')+'</div><div class="msg-time">'+ts+'</div></div></div>';
-  }).join('');
+  const h = storeLoad('u_'+currentUser+'_sessions_'+currentRole.id, []);
+  const el = document.getElementById('messages');
+  el.innerHTML = h.map(msg => `
+    <div class="msg-row ${msg.sender==='user'?'user':'ai'}">
+      <div class="msg-bubble">${msg.text.replace(/\n/g,'<br>')}</div>
+    </div>
+  `).join('');
   el.scrollTop = el.scrollHeight;
 }
+
 async function handleSend() {
-  var input = document.getElementById('msgInput'); var text = input.value.trim(); 
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  const cfg = storeLoad('u_'+currentUser+'_config', null);
   if (!text || isLoading) return;
-  const limits = await fetchLimits();
-  if (limits) {
-    if (limits.expire && new Date(limits.expire) < new Date()) { showToast('账号已过期'); return; }
-    const used = storeLoad('u_'+currentUser+'_used_tokens', 0);
-    if (limits.maxTokens && used >= limits.maxTokens) { showToast('用量已达上限'); return; }
-  }
+  if (!cfg) return showSettings();
+
   input.value = ''; input.style.height = 'auto';
   isLoading = true; document.getElementById('sendBtn').disabled = true;
-  saveMessage(currentRole.id, {sender:'user',text:text,time:Date.now()});
+  
+  saveMessage(currentRole.id, { sender:'user', text:text, time:Date.now() });
   renderMessages();
-  reportToAdmin(currentRole.name, text, 'user');
-  var el = document.getElementById('messages');
-  var row = document.createElement('div'); row.className = 'msg-row ai';
-  row.innerHTML = '<div class="msg-avatar" style="background:'+currentRole.avatarColor+'11">'+currentRole.avatar+'</div><div class="msg-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+  
+  const el = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  row.innerHTML = `<div class="msg-bubble">${currentRole.name} 正在回应...</div>`;
   el.appendChild(row); el.scrollTop = el.scrollHeight;
+  
   try {
-    var history = getSession(currentRole.id);
-    var sys = parseTemplate(currentRole.systemPrompt, currentRole.id);
-    var msgs = [{role:'system',content:sys}];
-    history.forEach(function(h){ msgs.push({role:h.sender==='user'?'user':'assistant',content:h.text}); });
-    var ai = await callLLM(msgs);
+    const history = storeLoad('u_'+currentUser+'_sessions_'+currentRole.id, []).slice(-12);
+    const msgs = [{ role:'system', content:currentRole.systemPrompt }];
+    history.forEach(h => msgs.push({ role: h.sender==='user'?'user':'assistant', content:h.text }));
+    
+    const resp = await fetch(cfg.apiBase.replace(/\/+$/,'') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
+      body: JSON.stringify({ model: cfg.model, messages: msgs, temperature: 0.85 })
+    });
+    
+    if (!resp.ok) throw new Error('API 暂时无法建立连接');
+    const json = await resp.json();
+    const aiText = json.choices[0].message.content;
+    
     row.remove();
-    saveMessage(currentRole.id, {sender:'ai',text:ai,time:Date.now()});
-    const used = storeLoad('u_'+currentUser+'_used_tokens', 0);
-    storeSave('u_'+currentUser+'_used_tokens', used + text.length + ai.length);
+    saveMessage(currentRole.id, { sender:'ai', text:aiText, time:Date.now() });
     renderMessages();
-    reportToAdmin(currentRole.name, ai, 'ai');
-  } catch(err) { row.remove(); showToast(err.message || '失败'); }
-  isLoading = false; document.getElementById('sendBtn').disabled = false; renderHistory();
+    syncCloud('push');
+  } catch(err) {
+    row.innerHTML = `<div class="msg-bubble" style="color:#f87171">连接中断: ${err.message}</div>`;
+  } finally {
+    isLoading = false; document.getElementById('sendBtn').disabled = false;
+  }
 }
-async function reportToAdmin(roleName, text, sender) {
-  const url = `https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/global_chat_log`;
-  try {
-    const resp = await fetch(url);
-    let log = resp.ok ? await resp.json() : [];
-    log.unshift({ user: currentUser, role: roleName, text: text, sender: sender, time: new Date().toLocaleString() });
-    if (log.length > 300) log = log.slice(0, 300);
-    await fetch(url, { method: 'POST', body: JSON.stringify(log) });
-  } catch (e) { console.error('Cloud Sync Error'); }
+
+function saveMessage(rid, msg) {
+  const k = 'u_'+currentUser+'_sessions_'+rid;
+  const all = storeLoad(k, []);
+  all.push(msg);
+  storeSave(k, all);
 }
-function showToast(m) { var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500); }
+
+function clearCurrentChat() {
+  if (confirm('确定要清除这段私密的记忆吗？')) {
+    localStorage.removeItem('u_'+currentUser+'_sessions_'+currentRole.id);
+    selectRole(currentRole.id);
+    syncCloud('push');
+  }
+}
+
+/** 设置 **/
+function updateBaseUrl() {
+  const sel = document.getElementById('set-model');
+  const baseInp = document.getElementById('set-base');
+  const customInp = document.getElementById('set-model-custom');
+  const selectedOption = sel.options[sel.selectedIndex];
+  
+  if (selectedOption.value === 'custom') {
+    customInp.style.display = 'block';
+  } else {
+    customInp.style.display = 'none';
+    if (selectedOption.dataset.url) {
+      baseInp.value = selectedOption.dataset.url;
+    }
+  }
+}
+
+function showSettings() {
+  document.getElementById('settingsOverlay').style.display = 'flex';
+  const cfg = storeLoad('u_'+currentUser+'_config', {});
+  const sel = document.getElementById('set-model');
+  const customInp = document.getElementById('set-model-custom');
+  
+  document.getElementById('set-key').value = cfg.apiKey || '';
+  document.getElementById('set-base').value = cfg.apiBase || 'https://api.openai.com/v1';
+  
+  // 恢复选中的模型
+  let found = false;
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === cfg.model) {
+      sel.selectedIndex = i;
+      found = true;
+      break;
+    }
+  }
+  
+  if (!found && cfg.model) {
+    sel.value = 'custom';
+    customInp.value = cfg.model;
+    customInp.style.display = 'block';
+  } else {
+    customInp.style.display = 'none';
+  }
+}
+
+function hideSettings() { document.getElementById('settingsOverlay').style.display = 'none'; }
+function saveSettings() {
+  const sel = document.getElementById('set-model');
+  const customInp = document.getElementById('set-model-custom');
+  const finalModel = sel.value === 'custom' ? customInp.value.trim() : sel.value;
+  
+  const cfg = {
+    apiKey: document.getElementById('set-key').value.trim(),
+    apiBase: document.getElementById('set-base').value.trim(),
+    model: finalModel || 'gpt-4o-mini',
+  };
+  if (!cfg.apiKey) return showToast('必须填写 模型密码');
+  storeSave('u_'+currentUser+'_config', cfg);
+  showToast('配置已加密保存');
+  hideSettings();
+}
+
+/** 同步 **/
 async function syncCloud(action) {
-  const key = btoa(currentUser + ACCESS_CODE).replace(/[^a-zA-Z0-9]/g, '');
-  const url = `https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/${key}`; 
+  const key = localStorage.getItem('xinyu_sync_key');
+  if (!key) return;
+  const url = `https://kvdb.io/AnV9jZp7J6pXn8XpY7pXn8/v4_${key}`;
   try {
     if (action === 'push') {
       const data = {};
       for (let k in localStorage) { if (k.startsWith('u_' + currentUser)) data[k] = localStorage.getItem(k); }
       await fetch(url, { method: 'POST', body: JSON.stringify(data) });
-      showToast('云端备份完成');
     } else {
       const resp = await fetch(url);
-      if (!resp.ok) throw new Error();
-      const data = await resp.json();
-      for (let k in data) localStorage.setItem(k, data[k]);
-      showToast('同步完成'); setTimeout(() => location.reload(), 1000);
+      if (resp.ok) {
+        const data = await resp.json();
+        for (let k in data) localStorage.setItem(k, data[k]);
+      }
     }
-  } catch (e) { showToast('同步失败，请稍后再试'); }
+  } catch (e) {}
 }
-init();
+
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function toggleSidebar() { 
+  const s = document.querySelector('.sidebar');
+  const m = document.querySelector('.sidebar-mask');
+  if (s.classList.contains('open')) {
+    s.classList.remove('open'); m.style.display = 'none';
+  } else {
+    s.classList.add('open'); m.style.display = 'block';
+  }
+}
+
+if (currentUser && PRIVATE_REGISTRY[currentUser]) startApp();
 </script>
 </body>
 </html>
